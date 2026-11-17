@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>证物调查报告 — 何忻仪 | CASE FILE</title>
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="seal">HX</span>
+    <span>CASE FILE <small>/ REPORT</small></span>
+  </a>
+  <nav class="site-nav">
+    <a href="index.html#works">Works</a>
+    <a href="index.html#about">About</a>
+    <a href="index.html#contact">Contact</a>
+  </nav>
+</header>
+
+<main class="cs wrap" id="caseRoot">
+  <!-- 由 JS 注入调查报告 -->
+</main>
+
+<footer class="site-footer">
+  <span>© <span data-year>2026</span> 何忻仪 · CASE FILE ARCHIVE</span>
+  <span><a href="index.html">← 返回档案室</a></span>
+</footer>
+
+<script src="assets/data.js"></script>
+<script src="assets/main.js"></script>
+<script>
+(function(){
+  "use strict";
+  var WORKS = window.WORKS || [];
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get('id');
+  var i = WORKS.findIndex(function(w){ return w.id === id; });
+  var w = i >= 0 ? WORKS[i] : WORKS[0];
+  var next = WORKS[(i + 1) % WORKS.length];
+  var root = document.getElementById('caseRoot');
+
+  document.title = "PROJECT " + w.no + " — " + w.title + " | CASE FILE";
+
+  var media;
+  if(w.embed){
+    media = '<iframe src="'+w.embed+'" title="'+w.title+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  } else if(w.image){
+    media = '<img src="'+w.image+'" alt="'+w.title+'">';
+  } else {
+    media = '<span class="ph">'+w.no+'</span>';
+  }
+
+  root.innerHTML =
+    '<div class="cs-top">' +
+      '<a class="cs-back" href="index.html#works"><span>←</span> 返回个人作品</a>' +
+    '</div>' +
+
+    '<section class="cs-hero kraft '+(w.tone||'kraft-a')+' torn-bottom reveal">' +
+      '<span class="tape"></span>' +
+      '<span class="pin"></span>' +
+      '<div class="case-no">PROJECT NO. '+w.no+' — '+w.category+' / '+w.year+'</div>' +
+      '<h1>'+w.title+'</h1>' +
+      '<div class="sub">'+w.subtitle+'</div>' +
+      '<p class="lead">'+w.intro+'</p>' +
+      '<span class="stamp round">EXHIBIT<br/>'+w.no+'</span>' +
+    '</section>' +
+
+    '<div class="cs-facts reveal">' +
+      '<div class="cs-fact"><div class="k">Year / 年份</div><div class="v">'+w.year+'</div></div>' +
+      '<div class="cs-fact"><div class="k">Category / 类别</div><div class="v">'+w.subtitle+'</div></div>' +
+      '<div class="cs-fact"><div class="k">Role / 角色</div><div class="v">'+w.role+'</div></div>' +
+      '<div class="cs-fact"><div class="k">Tools / 工具</div><div class="v">'+w.tools+'</div></div>' +
+    '</div>' +
+
+    '<div class="cs-media reveal">' +
+      '<div class="cs-media-frame kraft '+ (w.tone||'kraft-a') +'">' +
+        '<span class="tape"></span>' +
+        '<span class="pin dark"></span>' +
+        '<div class="cs-media-box">'+media+'</div>' +
+        '<div class="cs-media-cap">▲ 作品影像 / 点击下方可嵌入真实视频或图片</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<section class="cs-report">' +
+      '<aside class="rail">' +
+        '<div class="label">INVESTIGATION REPORT<br/>调查报告</div>' +
+        '<span class="stamp">CLASSIFIED</span>' +
+      '</aside>' +
+      '<div>' +
+        '<div class="cs-block reveal"><h3><span class="no">01.</span>案件背景 / Overview</h3><p>'+w.intro+'</p><span class="scribble">「线索从这里开始」</span></div>' +
+        '<div class="cs-block reveal"><h3><span class="no">02.</span>调查难点 / Challenge</h3><p>'+w.challenge+'</p></div>' +
+        '<div class="cs-block reveal"><h3><span class="no">03.</span>破解思路 / Approach</h3><p>'+w.approach+'</p><span class="scribble">「关键突破 ✓」</span></div>' +
+        '<div class="cs-block reveal"><h3><span class="no">04.</span>结案成果 / Result</h3><p>'+w.result+'</p></div>' +
+      '</div>' +
+    '</section>' +
+
+    '<section class="cs-next reveal">' +
+      '<div class="label">NEXT PROJECT / 下一个作品</div>' +
+      '<a href="case.html?id='+next.id+'"><h2>'+next.title+'</h2><span class="arr">→</span></a>' +
+    '</section>';
+
+  if(window.observeReveals) window.observeReveals(root);
+})();
+</script>
+</body>
+</html>
