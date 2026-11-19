@@ -198,6 +198,18 @@ input.text::placeholder{color:var(--mist)}
 .dots{display:flex;justify-content:center;gap:6px}
 .dots button{height:6px;width:6px;padding:0;border:0;border-radius:99px;background:var(--mist)}
 .dots button.on{width:20px;background:var(--deep)}
+.date-nav{display:grid;place-items:center;width:32px;height:32px;flex:none;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--deep);font-size:18px;line-height:1}
+.date-select{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font-size:13px;font-weight:700;outline:none}
+.date-week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;text-align:center;font-size:10px;color:var(--muted)}
+.date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
+.date-day{height:36px;border:1px solid transparent;border-radius:12px;background:var(--page);font-size:12px;color:var(--ink)}
+.date-day.on{background:var(--deep);color:#fff;font-weight:700}
+.date-day.blank{background:transparent;pointer-events:none}
+.menu-row{display:flex;align-items:center;gap:12px;width:100%;padding:14px 12px;border:0;border-radius:16px;background:transparent;text-align:left;font-size:13px;color:var(--ink)}
+.menu-row+.menu-row{border-top:1px solid var(--line)}
+.menu-row .ico{display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:12px;background:var(--mistlight);color:var(--deep)}
+.menu-row .lbl{flex:1}
+.menu-row .val{font-size:11px;color:var(--muted)}
 .hidden{display:none!important}
 .smallnote{font-size:10px;color:var(--muted);line-height:1.7}
 </style>
@@ -244,6 +256,9 @@ const ICON = {
   map:'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2V6Z"/><path d="M9 4v14M15 6v14"/></svg>',
   unlock:'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v5.3m0 6.4v5.3M3.5 12h5.3m6.4 0h5.3"/></svg>',
   journal:'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3V4.5Z"/><path d="M8 8h7M8 12h7M8 16h4"/></svg>',
+  user:'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>',
+  calendar:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>',
+  logout:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M14 8l4 4-4 4M9 12h9"/></svg>',
   chev:'<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg>'
 }
 
@@ -335,7 +350,8 @@ const S = {
   outcome:'leave',preview:null,flowEntryId:null,
   records:DATA.seed.records.map(x=>({...x})),preferences:DATA.seed.preferences.map(x=>({...x})),insight:DATA.seed.insight,
   mapQuery:'',activeStore:'s_coffee',carouselIndex:0,sheet:null,toast:'',
-  searchQuery:'',homeList:DATA.islands.map(x=>x.id)
+  searchQuery:'',homeList:DATA.islands.map(x=>x.id),
+  bookings:[],bookingDate:{year:2026,month:11,day:19},activeBookingId:null,loggedIn:true
 }
 const app = document.getElementById('app')
 let toastTimer=null, timerId=null
@@ -385,6 +401,20 @@ function recommendations(){
 }
 
 function fmtTime(sec){return [Math.floor(sec/3600),Math.floor(sec%3600/60),sec%60].map(n=>String(n).padStart(2,'0')).join(':')}
+function dateCardHtml(){
+  const {year:y,month:m,day:d}=S.bookingDate
+  const total=new Date(y,m,0).getDate()
+  const first=new Date(y,m-1,1).getDay()
+  const cells='<span class="date-day blank"></span>'.repeat(first)+Array.from({length:total},(_,n)=>`<button class="date-day ${n+1===d?'on':''}" data-action="date-day" data-day="${n+1}">${n+1}</button>`).join('')
+  const months=Array.from({length:12},(_,n)=>`<option value="${n+1}" ${n+1===m?'selected':''}>${n+1} 月</option>`).join('')
+  return `<div class="card" style="padding:16px;margin-top:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between"><div><p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--primary)">BOOKING DATE</p><h2 style="margin:4px 0 0;font-size:16px">选择预约日期</h2></div><span class="pill default">${y} 年</span></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px"><button class="date-nav" data-action="date-month" data-delta="-1" aria-label="上个月">‹</button><select class="date-select" data-field="bookingMonth">${months}</select><button class="date-nav" data-action="date-month" data-delta="1" aria-label="下个月">›</button></div>
+    <div class="date-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+    <div class="date-grid">${cells}</div>
+    <p class="smallnote" style="margin-top:12px">已选：${y} 年 ${m} 月 ${d} 日 · 预约后可在个人中心查看</p>
+  </div>`
+}
 function ring(g,size,cls='',extra=''){return `<div class="ring ${cls}" style="width:${size}px;height:${size}px;${extra}"><span style="font-size:${Math.round(size*.38)}px">${esc(g)}</span></div>`}
 function pill(text,tone='default'){return `<span class="pill ${tone}">${text}</span>`}
 function btn(text,action,variant='dark',extra=''){return `<button class="btn ${variant} ${extra}" data-action="${action}"><span>${text}</span><span class="arrow">${ICON.arrow}</span></button>`}
@@ -536,7 +566,8 @@ function viewOnboarding(){
 }
 
 function viewHome(){
-  const homeList=getHomeIslands()
+  const homeList=DATA.islands
+  S.homeList=homeList.map(x=>x.id)
   return `<div class="screen">
     <div class="hdr home-header" id="homeHeader" style="padding-bottom:76px">${hdrDeco()}<div class="content">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
@@ -560,8 +591,8 @@ function viewHome(){
         <div id="recoCarouselHost">${carouselHtml(homeList)}</div>
         <div style="margin-top:20px">
           ${btn('预约这次体验','open-detail','deep')}
-          <p id="homeHint" style="margin:12px 0 0;text-align:center;font-size:11px;color:var(--muted)">${S.booking?'有一次体验正在进行，随时可以继续。':'先看看，再决定要不要留下。'}</p>
-          ${S.booking?`<button data-action="continue" style="display:block;margin:8px auto 0;border:0;background:none;color:var(--primary);font-size:11px;font-weight:700">继续上次体验 →</button>`:''}
+          <p id="homeHint" style="margin:12px 0 0;text-align:center;font-size:11px;color:var(--muted)">${S.bookings.length?`已有 ${S.bookings.length} 条预约，可在个人中心查看。`:'先看看，再决定要不要留下。'}</p>
+          ${S.bookings.length?`<button data-action="nav-bookings" style="display:block;margin:8px auto 0;border:0;background:none;color:var(--primary);font-size:11px;font-weight:700">查看我的预约 →</button>`:''}
         </div>
       </div>
       <div style="margin-top:24px"><div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:16px">离你很近</h2><button data-action="nav-map" style="border:0;background:none;color:var(--muted);font-size:11px">打开地图 →</button></div>
@@ -617,6 +648,7 @@ function viewDetail(){
   const i=findIsland(S.selectedIslandId)||DATA.islands[0]
   const lv=findLevel(S.levelId)
   const st=findStore(S.storeId)||DATA.stores.find(x=>x.islandId===i.id)||DATA.stores[0]
+  const bd=S.bookingDate
   let feed=DATA.islands.filter(x=>x.id!==i.id)
   if(S.filter==='near')feed=[...feed].sort((a,b)=>parseFloat(a.distance)-parseFloat(b.distance))
   if(S.filter==='quick')feed=feed.filter(x=>x.price<=139)
@@ -669,6 +701,7 @@ function viewDetail(){
           }).join('')}
         </div>
       </div>
+      ${dateCardHtml()}
       <div class="card" style="padding:16px;margin-top:24px">
         <div style="display:flex;align-items:center;gap:12px">${ring(st.mentor.slice(0,1),48)}<div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;font-weight:700">${st.mentor} · 带你登岛</p><p style="margin:4px 0 0;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${st.credential}</p></div>${pill('已认证','green')}</div>
         <p style="margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:10px;line-height:1.7;color:var(--muted)">${st.name} · ${st.distance} · 导师会带你做真实任务，做不出来也没关系。</p>
@@ -679,7 +712,7 @@ function viewDetail(){
       <p style="text-align:center;font-size:10px;color:var(--muted);margin-top:24px">登岛不是承诺，只是一段真实的时间。</p>
     </div>
     <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:12px;width:100%;max-width:375px;padding:12px 20px;border-top:1px solid var(--line);background:rgba(255,255,255,.95);backdrop-filter:blur(10px)">
-      <div style="flex:none"><p style="margin:0;font-size:10px;color:var(--muted)">${lv.duration} · ${lv.name}</p><p style="margin:2px 0 0;font-size:19px;font-weight:800;line-height:1.1">¥${lv.price}</p></div>
+      <div style="flex:none"><p style="margin:0;font-size:10px;color:var(--muted)">${bd.year}年${bd.month}月${bd.day}日 · ${lv.duration}</p><p style="margin:2px 0 0;font-size:19px;font-weight:800;line-height:1.1">¥${lv.price}</p></div>
       ${btn('确认预约 · 登岛','book')}
     </div>
   </div>`
@@ -834,10 +867,79 @@ function viewUnlock(){
   </div>`
 }
 
+function bookingDate(b){return `${b.year} 年 ${b.month} 月 ${b.day} 日`}
+function viewProfile(){
+  const logged=S.loggedIn
+  return `<div class="screen">
+    <div class="hdr" style="padding-bottom:56px">${hdrDeco()}<div class="content">
+      <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.22em;color:rgba(85,128,176,.7)">MY ACCOUNT</p>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:18px"><div class="glass-strong" style="display:grid;place-items:center;width:58px;height:58px;border-radius:50%;color:var(--deep)">${ring('岛',44)}</div><div><h1 style="margin:0;font-size:24px;letter-spacing:-.5px">${logged?esc(S.profile.nickname):'未登录'}</h1><p style="margin:6px 0 0;font-size:11px;color:rgba(85,128,176,.85)">${logged?'跳岛的第 '+S.profile.islandDays+' 天 · '+esc(S.location.split(' · ').slice(0,2).join(' · ')):'登录后查看你的跳岛记录'}</p></div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px">${[['预约',S.bookings.length],['登岛',S.records.length],['日志',S.records.length]].map(([l,v])=>`<div class="glass-strong" style="padding:10px 6px;border-radius:16px;text-align:center"><p style="margin:0;font-size:18px;font-weight:800;line-height:1">${v}</p><p style="margin:6px 0 0;font-size:9px;color:rgba(85,128,176,.85)">${l}</p></div>`).join('')}</div>
+    </div></div>
+    <div class="pad overlap" style="margin-top:-26px">
+      <div class="card" style="padding:8px">
+        <button class="menu-row" data-action="nav-bookings"><span class="ico">${ICON.calendar}</span><span class="lbl">预约记录</span><span class="val">${S.bookings.length} 条 ${ICON.right}</span></button>
+        <button class="menu-row" data-action="nav-journal"><span class="ico">${ICON.journal}</span><span class="lbl">跳岛日志</span><span class="val">${ICON.right}</span></button>
+        <button class="menu-row" data-action="account-info"><span class="ico">${ICON.user}</span><span class="lbl">账号信息</span><span class="val">${logged?'已登录':'未登录'} ${ICON.right}</span></button>
+        <button class="menu-row" data-action="switch-account"><span class="ico">${ICON.chev}</span><span class="lbl">切换账号</span><span class="val">${ICON.right}</span></button>
+      </div>
+      <div style="margin-top:16px">${logged?`<button data-action="logout" class="card" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border:0;color:var(--off);font-size:13px;font-weight:700">${ICON.logout} 退出登录</button>`:btn('登录 / 注册','login','deep')}</div>
+      <p class="smallnote" style="text-align:center;margin-top:24px">这是个演示账号，数据只保存在当前页面。</p>
+      ${footer()}
+    </div>
+  </div>`
+}
+function viewBookings(){
+  const list=S.bookings
+  return `<div class="screen">
+    <div class="hdr" style="padding-bottom:40px">${hdrDeco()}<div class="content">
+      ${backBar(pill('MY BOOKINGS','glasspill'))}
+      <h1 style="margin:12px 0 0;font-size:26px;letter-spacing:-.5px">预约记录</h1>
+      <p style="margin:8px 0 0;font-size:12px;color:rgba(85,128,176,.85)">每一座准备登的岛，都在这里等你。</p>
+    </div></div>
+    <div class="pad overlap" style="margin-top:-20px">
+      ${list.length?`<div style="display:grid;gap:12px">${list.map(b=>{
+        const i=findIsland(b.islandId),lv=findLevel(b.levelId)
+        return `<div class="card click" data-action="booking-detail" data-id="${b.id}" style="padding:16px;display:flex;align-items:center;gap:12px">${ring(i.glyph,46)}<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b style="font-size:14px">${i.name}</b>${pill(b.status==='completed'?'已完成':'待体验',b.status==='completed'?'green':'default')}</div><p style="margin:4px 0 0;font-size:11px;color:var(--muted)">${bookingDate(b)} · ${lv.name} · ¥${lv.price}</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`
+      }).join('')}</div>`:`<div class="card" style="padding:32px 20px;text-align:center"><p style="margin:0;font-size:13px;font-weight:700">还没有预约记录</p><p class="smallnote" style="margin-top:8px">回到首页挑一座岛，选好日期就能预约。</p></div>`}
+      <div style="margin-top:20px"><button data-action="nav" data-id="home" style="width:100%;padding:14px;border:1px solid var(--line);border-radius:99px;background:#fff;color:var(--deep);font-size:12px;font-weight:600">再挑一座岛</button></div>
+      ${footer()}
+    </div>
+  </div>`
+}
+function viewBookingDetail(){
+  const b=S.bookings.find(x=>x.id===S.activeBookingId)||S.bookings[0]
+  if(!b)return viewBookings()
+  const i=findIsland(b.islandId),lv=findLevel(b.levelId),st=findStore(S.storeId)||DATA.stores.find(x=>x.islandId===i.id)||DATA.stores[0]
+  const done=b.status==='completed'
+  return `<div class="screen" style="padding-bottom:120px">
+    <div class="hdr" style="padding-bottom:48px">${hdrDeco()}<div class="content">
+      ${backBar(pill(done?'已完成':'待体验','glasspill'))}
+      <p style="margin:16px 0 0;font-size:10px;font-weight:700;letter-spacing:.22em;color:rgba(85,128,176,.7)">BOOKING DETAIL</p>
+      <h1 style="margin:8px 0 0;font-size:26px;letter-spacing:-.5px">${i.name}</h1>
+      <p style="margin:8px 0 0;font-size:12px;color:rgba(85,128,176,.85)">${i.en} · ${lv.name}</p>
+    </div></div>
+    <div class="pad overlap" style="margin-top:-28px">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:12px">${ring(i.glyph,48)}<div style="flex:1"><p style="margin:0;font-size:14px;font-weight:700">${bookingDate(b)}</p><p style="margin:4px 0 0;font-size:11px;color:var(--muted)">${lv.duration} · ${lv.desc}</p></div></div>
+        <div style="display:grid;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:12px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">登岛方式</span><b>${lv.name}</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">带练导师</span><b>${st.mentor}</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">集合地点</span><b>${st.name}</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">预约金额</span><b>¥${lv.price}</b></div>
+        </div>
+      </div>
+      <div style="margin-top:20px">${done?`<div class="card" style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">这次体验已完成，记录收进跳岛日志。</div>`:btn('开始体验','start-experience','deep')}</div>
+      <button data-action="cancel-booking" style="display:block;margin:16px auto 0;border:0;background:none;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:4px">取消预约</button>
+      ${footer()}
+    </div>
+  </div>`
+}
+
 function toastHtml(){return S.toast?`<div class="toast" id="toastEl"><span class="tick">${ICON.check}</span><span>${esc(S.toast)}</span></div>`:''}
 function navHtml(){
-  if(!['home','map','unlock','journal'].includes(S.screen))return ''
-  const tabs=[['home',ICON.home,'首页'],['map',ICON.map,'地图'],['unlock',ICON.unlock,'跳岛地图'],['journal',ICON.journal,'档案']]
+  if(!['home','map','unlock','profile'].includes(S.screen))return ''
+  const tabs=[['home',ICON.home,'首页'],['map',ICON.map,'地图'],['unlock',ICON.unlock,'跳岛地图'],['profile',ICON.user,'我的']]
   return `<nav class="nav"><div class="nav-inner">
     ${tabs.slice(0,2).map(([id,icon,label])=>`<button class="tab ${S.screen===id?'active':''}" data-action="nav" data-id="${id}" aria-label="${label}" title="${label}">${icon}</button>`).join('')}
     <button class="plus" data-action="plus" aria-label="快速开始" title="快速开始">${ICON.plus}</button>
@@ -854,9 +956,18 @@ function sheetHtml(){
   }
   if(S.sheet==='plus')return `<div class="sheet-mask" data-action="close-sheet"></div><div class="sheet"><div class="handle"></div><p style="margin:0 0 4px;font-size:15px;font-weight:700">现在想做什么？</p>
     <button class="sheet-item" data-action="sheet-home"><span><strong>再跳一座岛</strong><small>回到首页，看看今天的推荐</small></span>${ICON.right}</button>
-    <button class="sheet-item" data-action="sheet-continue"><span><strong>继续上次体验</strong><small>${S.booking?findIsland(S.booking.islandId).name+' · '+findLevel(S.booking.levelId).name:'还没有进行中的体验'}</small></span>${ICON.right}</button>
+    <button class="sheet-item" data-action="sheet-bookings"><span><strong>我的预约</strong><small>${S.bookings.length?S.bookings.length+' 条预约记录':'还没有预约，先挑一座岛'}</small></span>${ICON.right}</button>
     <button class="sheet-item" data-action="sheet-unlock"><span><strong>跳岛地图</strong><small>看看你点亮了哪些岛</small></span>${ICON.right}</button>
     <button class="sheet-item" data-action="sheet-journal"><span><strong>看看跳岛日志</strong><small>你走过的每一座岛都记在那里</small></span>${ICON.right}</button>
+  </div>`
+  if(S.sheet==='account-info')return `<div class="sheet-mask" data-action="close-sheet"></div><div class="sheet"><div class="handle"></div><p style="margin:0 0 12px;font-size:15px;font-weight:700">账号信息</p>
+    <div class="sheet-item"><span><strong>昵称</strong><small>${esc(S.profile.nickname)}</small></span></div>
+    <div class="sheet-item"><span><strong>账号</strong><small>demo@islandhop</small></span></div>
+    <div class="sheet-item"><span><strong>当前定位</strong><small>${esc(S.location)}</small></span></div>
+    <div class="sheet-item"><span><strong>登录状态</strong><small>${S.loggedIn?'已登录':'未登录'}</small></span></div>
+  </div>`
+  if(S.sheet==='switch-account')return `<div class="sheet-mask" data-action="close-sheet"></div><div class="sheet"><div class="handle"></div><p style="margin:0 0 4px;font-size:15px;font-weight:700">切换账号</p><p style="margin:0 0 12px;font-size:11px;color:var(--muted)">选择一个演示账号继续使用。</p>
+    ${['林漫','阿岛','小屿'].map(n=>`<button class="sheet-item" data-action="choose-account" data-value="${n}"><span><strong>${n}</strong><small>${n===S.profile.nickname?'当前账号':'切换到这个账号'}</small></span>${n===S.profile.nickname?ICON.check:ICON.right}</button>`).join('')}
   </div>`
   return ''
 }
@@ -865,7 +976,7 @@ let lastRenderedScreen=null
 function render(){
   if(timerId&&S.screen!=='experience'){clearInterval(timerId);timerId=null}
   if(lastRenderedScreen!==S.screen){window.scrollTo(0,0);lastRenderedScreen=S.screen}
-  const views={onboarding:viewOnboarding,home:viewHome,search:viewSearch,map:viewMap,unlock:viewUnlock,detail:viewDetail,experience:viewExperience,diary:viewDiary,result:viewResult,journal:viewJournal}
+  const views={onboarding:viewOnboarding,home:viewHome,search:viewSearch,map:viewMap,unlock:viewUnlock,detail:viewDetail,experience:viewExperience,diary:viewDiary,result:viewResult,journal:viewJournal,profile:viewProfile,bookings:viewBookings,bookingDetail:viewBookingDetail}
   app.innerHTML=(views[S.screen]||viewHome)()+navHtml()+toastHtml()+sheetHtml()+miniHeaderHtml()
   bindDynamic()
   updateMiniHeader()
@@ -942,6 +1053,8 @@ function submitDiary(){
   if(d.fun.includes('f_edit')&&d.hard.includes('h_shoot'))S.insight='你并不排斥影像这个方向，只是更在意画面形成的过程：拍摄让你消耗，后期修图让你投入。下一次可以离镜头远一点，试试灯光布景或图片编辑。'
   else if(outcome==='stay')S.insight=`你在「${i.name}」上给出了正向信号。喜欢不是立刻定下方向的理由，只是多了一条线索：你偏好有明确产出、能看见结果的过程。下一次换一座相似的岛试试。`
   else S.insight=`「${i.name}」这座岛，你登过了，也决定不留下。排除不是失败——它让你知道，比起重复和独自精细处理，你更在意交流、动手和看得见的反馈。下一次可以挑一座节奏不同的岛。`
+  const doneBooking=S.bookings.find(x=>x.id===S.activeBookingId)
+  if(doneBooking)doneBooking.status='completed'
   showToast('体验日记已收进跳岛日志')
   navigate('result')
 }
@@ -979,9 +1092,16 @@ app.addEventListener('click',e=>{
       break
     }
     case 'sheet-home':S.sheet=null;S.stack=[];S.screen='home';render();break
-    case 'sheet-continue':S.sheet=null;S.screen=S.booking?'experience':'detail';render();break
+    case 'sheet-bookings':S.sheet=null;navigate('bookings');break
     case 'sheet-unlock':S.sheet=null;S.stack=[];S.screen='unlock';render();break
     case 'sheet-journal':S.sheet=null;S.stack=[];S.screen='journal';render();break
+    case 'nav-bookings':navigate('bookings');break
+    case 'nav-journal':navigate('journal');break
+    case 'account-info':if(!S.loggedIn){showToast('请先登录');break}S.sheet='account-info';render();break
+    case 'switch-account':if(!S.loggedIn){showToast('请先登录');break}S.sheet='switch-account';render();break
+    case 'choose-account':S.profile.nickname=el.dataset.value;S.nickname=el.dataset.value;S.sheet=null;render();showToast('已切换为 '+el.dataset.value);break
+    case 'logout':S.loggedIn=false;render();showToast('已退出登录');break
+    case 'login':S.loggedIn=true;render();showToast('已登录 · 演示账号');break
     case 'unlock-island':{
       const id=el.dataset.id
       if([...new Set(S.records.map(r=>r.islandId))].includes(id)){S.selectedIslandId=id;S.storeId=null;navigate('detail')}
@@ -1007,7 +1127,7 @@ app.addEventListener('click',e=>{
     case 'open-detail':navigate('detail');break
     case 'open-detail-id':S.selectedIslandId=el.dataset.id;S.storeId=null;navigate('detail');break
     case 'open-detail-store':S.selectedIslandId=el.dataset.island;S.storeId=el.dataset.store;navigate('detail');break
-    case 'continue':S.screen=S.booking?'experience':'detail';render();break
+    case 'continue':navigate('bookings');break
     case 'store':{
       S.activeStore=el.dataset.store;S.storeId=el.dataset.store;render()
       const card=document.querySelector('.store-card[data-store="'+S.activeStore+'"]'),track=document.getElementById('storeTrack')
@@ -1022,10 +1142,33 @@ app.addEventListener('click',e=>{
     }
     case 'level':S.levelId=el.dataset.id;render();break
     case 'scroll-levels':document.getElementById('levels').scrollIntoView({behavior:'smooth',block:'center'});break
+    case 'date-month':{
+      const m=S.bookingDate.month+Number(el.dataset.delta)
+      if(m<1||m>12)break
+      S.bookingDate.month=m
+      const total=new Date(S.bookingDate.year,m,0).getDate()
+      if(S.bookingDate.day>total)S.bookingDate.day=total
+      render();break
+    }
+    case 'date-day':S.bookingDate.day=Number(el.dataset.day);render();break
     case 'book':{
-      const i=findIsland(S.selectedIslandId),lv=findLevel(S.levelId)
-      S.booking={islandId:i.id,levelId:lv.id};S.tasksDone=['t1'];S.mood=null;S.elapsed=84*60+16
-      showToast(`预约成功 · ${i.name} ${lv.name}`);navigate('experience');break
+      const i=findIsland(S.selectedIslandId),lv=findLevel(S.levelId),bd=S.bookingDate
+      const record={id:'b_'+Date.now(),islandId:i.id,levelId:lv.id,year:bd.year,month:bd.month,day:bd.day,status:'booked'}
+      S.bookings.unshift(record);S.booking=record;S.activeBookingId=record.id
+      showToast('预约成功，可在预约记录里查看');render();break
+    }
+    case 'booking-detail':S.activeBookingId=el.dataset.id;navigate('bookingDetail');break
+    case 'start-experience':{
+      const b=S.bookings.find(x=>x.id===S.activeBookingId)
+      if(!b)break
+      S.selectedIslandId=b.islandId;S.levelId=b.levelId;S.activeBookingId=b.id
+      S.tasksDone=['t1'];S.mood=null;S.elapsed=84*60+16
+      navigate('experience');break
+    }
+    case 'cancel-booking':{
+      S.bookings=S.bookings.filter(x=>x.id!==S.activeBookingId)
+      S.activeBookingId=null;S.booking=S.bookings[0]||null
+      showToast('已取消预约');navigate('bookings');break
     }
     case 'task':{
       const id=el.dataset.id
@@ -1055,6 +1198,12 @@ app.addEventListener('input',e=>{
   const f=e.target.dataset.field
   if(f==='nickname')S.nickname=e.target.value
   if(f==='pageSearch'){S.searchQuery=e.target.value;applyPageSearch()}
+  if(f==='bookingMonth'){
+    S.bookingDate.month=Number(e.target.value)
+    const total=new Date(S.bookingDate.year,S.bookingDate.month,0).getDate()
+    if(S.bookingDate.day>total)S.bookingDate.day=total
+    render()
+  }
   if(f==='mapQuery'){S.mapQuery=e.target.value;applyMapFilter()}
   if(f==='excitement'){
     S.diary.excitement=Number(e.target.value)
@@ -1065,6 +1214,7 @@ app.addEventListener('input',e=>{
   }
   if(f==='discovery'){S.diary.discovery=e.target.value;const c=document.getElementById('discCount');if(c)c.textContent=e.target.value.length}
 })
+app.addEventListener('change',e=>{if(e.target.dataset.field==='bookingMonth')e.target.dispatchEvent(new Event('input',{bubbles:true}))})
 
 window.addEventListener('scroll',updateMiniHeader,{passive:true})
 render()
