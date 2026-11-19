@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>跳岛 · ISLAND HOP（可直接运行版）</title>
+<style>
+:root{
+  --primary:#6E96C2;--deep:#5580B0;--mist:#C6D8EA;--mistlight:#EAF1F8;
+  --page:#F7F9FB;--ink:#2A2D33;--muted:#9AA0A8;--line:#E8EDF2;
+  --okay:#A8D08D;--off:#D98880;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%}
+body{margin:0;background:#E8EDF2;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+#app{position:relative;width:100%;max-width:375px;min-height:100vh;min-height:100dvh;margin:0 auto;overflow:hidden;background:var(--page)}
+@media(min-width:640px){#app{margin:20px auto;min-height:calc(100dvh - 40px);border-radius:30px;box-shadow:0 24px 60px rgba(42,45,51,.16)}}
+.screen{min-height:100%;padding-bottom:100px}
+.overlap{position:relative;z-index:6}
+
+#splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#E8EDF2}
+#splash .splash-frame{position:relative;width:min(100vw,calc(100dvh * 9 / 16),375px);height:min(100dvh,calc(100vw * 16 / 9),667px);overflow:hidden;border-radius:30px;background:linear-gradient(150deg,#9FB9D8,#6E96C2);box-shadow:0 24px 60px rgba(42,45,51,.2);transition:opacity .35s ease,transform .35s ease}
+@media(max-width:639px){#splash .splash-frame{border-radius:0}}
+#splash.out .splash-frame{opacity:0;transform:scale(1.04);pointer-events:none}
+#splash svg{width:100%;height:100%;display:block}
+#splash .stitle{position:absolute;top:18%;left:0;right:0;text-align:center;color:#fff;opacity:0;animation:fadeUp .7s .25s ease-out forwards}
+#splash .stitle b{display:block;font-size:30px;letter-spacing:.22em;font-weight:700}
+#splash .stitle span{display:block;margin-top:8px;font-size:11px;letter-spacing:.14em;opacity:.85}
+#splash .sfoot{position:absolute;bottom:9%;left:0;right:0;text-align:center;color:rgba(255,255,255,.85);font-size:11px;letter-spacing:.08em;opacity:0;animation:fadeUp .6s .7s ease-out forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.pad{padding-left:20px;padding-right:20px}
+.hide-scroll{scrollbar-width:none;-ms-overflow-style:none}
+.hide-scroll::-webkit-scrollbar{display:none}
+
+.hdr{position:relative;overflow:hidden;border-radius:0 0 26px 26px;background:linear-gradient(150deg,#9FB9D8,#C6D8EA);padding:36px 20px 30px}
+.hdr.tight{padding-top:20px}
+.glass{background:rgba(255,255,255,.34);border:1px solid rgba(255,255,255,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.glass-strong{background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.hdr .deco{position:absolute;inset:0;pointer-events:none}
+.hdr .deco i{position:absolute;display:block;border-radius:999px;background:rgba(255,255,255,.34);border:1px solid rgba(255,255,255,.58)}
+.hdr .content{position:relative;z-index:2}
+
+.card{background:#fff;border-radius:22px;box-shadow:0 10px 30px rgba(85,128,176,.08)}
+.card.click{cursor:pointer;transition:transform .15s}
+.card.click:active{transform:scale(.99)}
+.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mt-5{margin-top:20px}.mt-6{margin-top:24px}.mt-7{margin-top:28px}
+.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
+
+.btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;height:54px;padding:0 8px 0 24px;border:0;border-radius:999px;font-size:15px;font-weight:700;transition:transform .15s}
+.btn:active{transform:scale(.98)}
+.btn[disabled],.btn.disabled{opacity:.4;pointer-events:none}
+.btn .arrow{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:50%}
+.btn.dark{background:var(--ink);color:#fff;box-shadow:0 10px 30px rgba(42,45,51,.16)}
+.btn.dark .arrow{background:#fff;color:var(--ink)}
+.btn.deep{background:var(--deep);color:#fff;box-shadow:0 10px 24px rgba(85,128,176,.26)}
+.btn.deep .arrow{background:#fff;color:var(--deep)}
+.btn.light{background:#fff;color:var(--ink);box-shadow:0 10px 30px rgba(85,128,176,.08)}
+.btn.light .arrow{background:var(--ink);color:#fff}
+.btn.compact{height:36px;padding-left:14px;font-size:11px}
+.btn.compact .arrow{width:28px;height:28px}
+.btn.compact .arrow svg{width:12px;height:12px}
+
+.pill{display:inline-flex;align-items:center;gap:5px;flex:none;padding:6px 11px;border-radius:999px;font-size:11px;font-weight:600;line-height:1;border:0;white-space:nowrap}
+.pill.default{background:var(--mistlight);color:var(--deep)}
+.pill.mist{background:rgba(198,216,234,.7);color:var(--deep)}
+.pill.dark{background:var(--ink);color:#fff}
+.pill.green{background:rgba(168,208,141,.25);color:#4F7B45}
+.pill.red{background:rgba(217,136,128,.2);color:#B05D56}
+.pill.outline{background:#fff;border:1px solid var(--line);color:var(--muted)}
+.pill.glasspill{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.7);color:var(--deep)}
+
+.ring{position:relative;display:grid;place-items:center;flex:none;border-radius:50%;border:1px solid rgba(110,150,194,.35);background:rgba(255,255,255,.6);color:var(--deep)}
+.ring::after{content:"";position:absolute;inset:5px;border-radius:50%;border:1px solid currentColor;opacity:.22}
+.ring span{font-weight:700;letter-spacing:.08em;line-height:1}
+
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:40;width:100%;max-width:375px;padding:0 16px 16px;pointer-events:none}
+@media(min-width:640px){.nav{bottom:20px}}
+.nav-inner{pointer-events:auto;display:flex;align-items:center;justify-content:space-between;gap:2px;padding:6px 8px;border-radius:999px;background:rgba(255,255,255,.88);box-shadow:0 10px 28px rgba(42,45,51,.18);backdrop-filter:blur(14px)}
+.tab{display:grid;place-items:center;width:48px;height:44px;flex:none;border:0;border-radius:999px;background:#fff;color:var(--muted);font-size:12px;font-weight:600}
+.tab.active{background:var(--ink);color:#fff;box-shadow:0 8px 20px rgba(42,45,51,.16)}
+.plus{display:grid;place-items:center;width:48px;height:48px;flex:none;margin-top:-12px;border:0;border-radius:50%;background:var(--primary);color:#fff;box-shadow:0 8px 18px rgba(85,128,176,.4)}
+
+.scene{position:absolute;inset:0;overflow:hidden}
+.scene svg{width:100%;height:100%;display:block}
+.scene-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.18) 55%,rgba(255,255,255,.72) 100%)}
+.coffee-photo{position:absolute;inset:0;z-index:1;background-image:url('./coffee.jpg');background-size:cover;background-position:center 44%}
+.scene-card{position:relative;overflow:hidden;background:#DCE7F2}
+.scene-card .ring{background:rgba(255,255,255,.82);backdrop-filter:blur(6px)}
+
+.unlock-node{position:absolute;transform:translate(-50%,-50%);display:grid;place-items:center;gap:5px;border:0;background:none;padding:0}
+.unlock-node .orb{position:relative;display:grid;place-items:center;width:74px;height:42px;padding-bottom:5px;border-radius:74px 74px 0 0;border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.95);color:var(--deep);box-shadow:0 8px 18px rgba(42,45,51,.14);font-size:17px;font-weight:700}
+.unlock-node .orb::after{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#2A2D33}
+.unlock-node.locked .orb{background:rgba(255,255,255,.4);color:rgba(85,128,176,.55);border-color:rgba(255,255,255,.5);box-shadow:none}
+.unlock-node.locked .orb::after{opacity:.25}
+.unlock-node small{font-size:10px;font-weight:600;color:var(--deep);text-shadow:0 1px 2px rgba(255,255,255,.9)}
+.unlock-node.locked small{color:rgba(85,128,176,.6)}
+
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;width:310px;padding:12px 14px;border-radius:18px;background:rgba(42,45,51,.95);color:#fff;box-shadow:0 12px 34px rgba(42,45,51,.2);font-size:12px;line-height:1.5;animation:toastIn .24s ease-out}
+@media(min-width:640px){.toast{top:36px}}
+.toast .tick{display:grid;place-items:center;width:24px;height:24px;flex:none;border-radius:50%;background:var(--okay);color:var(--ink)}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
+
+.sheet-mask{position:fixed;inset:0;z-index:50;background:rgba(42,45,51,.25);backdrop-filter:blur(2px)}
+.sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:51;width:100%;max-width:375px;padding:20px 20px 28px;border-radius:26px 26px 0 0;background:#fff;box-shadow:0 12px 34px rgba(42,45,51,.18);animation:rise .3s ease-out}
+@media(min-width:640px){.sheet{bottom:20px;border-radius:26px}}
+@keyframes rise{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+.sheet .handle{width:40px;height:4px;margin:0 auto 18px;border-radius:99px;background:var(--line)}
+.sheet-item{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 16px;margin-top:10px;border:0;border-radius:18px;background:var(--page);text-align:left}
+.sheet-item strong{display:block;font-size:13px}
+.sheet-item small{display:block;margin-top:3px;font-size:11px;color:var(--muted)}
+
+.map{position:relative;height:360px;overflow:hidden;background-color:#E4EBF3;background-image:linear-gradient(0deg,rgba(255,255,255,.72) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.72) 1px,transparent 1px);background-size:46px 46px}
+.road{position:absolute;border-radius:99px;background:rgba(255,255,255,.7)}
+.pin{position:absolute;transform:translate(-50%,-50%);padding:0;border:0;background:none}
+.pin .pin-orb{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(255,255,255,.9);border-radius:50%;background:#fff;color:var(--deep);font-size:15px;font-weight:700;box-shadow:0 8px 20px rgba(85,128,176,.16);transition:transform .2s}
+.pin.active .pin-orb{background:var(--deep);color:#fff;transform:scale(1.08)}
+.pin.active::after{content:"";position:absolute;left:50%;bottom:-4px;width:8px;height:8px;transform:translateX(-50%) rotate(45deg);background:var(--deep)}
+.ping{position:absolute;left:45%;top:47%;width:14px;height:14px;transform:translate(-50%,-50%)}
+.ping::before{content:"";position:absolute;inset:-12px;border-radius:50%;background:rgba(110,150,194,.4);animation:ping 2.4s infinite}
+.ping::after{content:"";position:absolute;inset:0;border:3px solid #fff;border-radius:50%;background:var(--deep);box-shadow:0 2px 6px rgba(42,45,51,.2)}
+@keyframes ping{0%{transform:scale(.65);opacity:.55}80%,100%{transform:scale(1.8);opacity:0}}
+
+.slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;background:linear-gradient(90deg,var(--primary) var(--p,50%),var(--line) var(--p,50%));outline:none}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border:5px solid var(--deep);border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(42,45,51,.18)}
+.slider::-moz-range-thumb{width:14px;height:14px;border:5px solid var(--deep);border-radius:50%;background:#fff}
+textarea.field{width:100%;resize:none;padding:14px;border:0;border-radius:18px;background:var(--page);font-size:12px;line-height:1.7;color:var(--ink);outline:none}
+textarea.field:focus{box-shadow:0 0 0 1px var(--primary)}
+input.text{width:100%;border:0;border-bottom:1px solid var(--line);padding:8px 0 12px;background:transparent;font-size:19px;font-weight:700;color:var(--ink);outline:none}
+input.text:focus{border-color:var(--primary)}
+input.text::placeholder{color:var(--mist)}
+
+.chip{padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);font-size:11px;font-weight:600;transition:transform .12s}
+.chip:active{transform:scale(.95)}
+.chip.on{background:var(--mist);border-color:var(--primary);color:var(--deep)}
+.chip.hard.on{background:rgba(217,136,128,.15);border-color:rgba(217,136,128,.5);color:#B05D56}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:18px;background:#fff;text-align:left;font-size:13px}
+.sw{position:relative;width:44px;height:24px;flex:none;border-radius:99px;background:var(--line);transition:background .2s}
+.sw::after{content:"";position:absolute;left:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);transition:left .2s}
+.sw.on{background:var(--okay)}
+.sw.on.neg{background:var(--off)}
+.sw.on::after{left:22px}
+
+.task{display:flex;align-items:flex-start;gap:12px;width:100%;padding:14px;border-radius:18px;border:1px solid var(--line);background:#fff;text-align:left}
+.task.done{border-color:rgba(168,208,141,.5);background:rgba(168,208,141,.1)}
+.task.current{border-color:var(--primary);background:rgba(234,241,248,.7)}
+.tickbox{display:grid;place-items:center;width:20px;height:20px;flex:none;margin-top:2px;border:1px solid var(--line);border-radius:50%;color:transparent}
+.task.done .tickbox{border-color:var(--okay);background:var(--okay);color:var(--ink)}
+.task.current .tickbox{border-color:var(--primary)}
+
+.bar{height:8px;border-radius:99px;background:var(--mistlight);overflow:hidden}
+.bar span{display:block;height:100%;border-radius:99px;background:var(--primary)}
+.timeline{position:relative;padding-left:24px}
+.timeline::before{content:"";position:absolute;left:7px;top:12px;bottom:12px;width:1px;background:var(--line)}
+.timeline .dot{position:absolute;left:-23px;top:24px;width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:var(--primary);box-shadow:0 1px 4px rgba(42,45,51,.2)}
+.sel-island::after{content:"";position:absolute;inset:0;z-index:5;border-radius:inherit;box-shadow:inset 0 0 0 2px var(--deep);pointer-events:none}
+.island-card{position:relative;display:block;width:252px;height:282px;flex:none;padding:20px;border:0;border-radius:20px;text-align:left;overflow:hidden;transition:outline .15s}
+.dots{display:flex;justify-content:center;gap:6px}
+.dots button{height:6px;width:6px;padding:0;border:0;border-radius:99px;background:var(--mist)}
+.dots button.on{width:20px;background:var(--deep)}
+.hidden{display:none!important}
+.smallnote{font-size:10px;color:var(--muted);line-height:1.7}
+</style>
+</head>
+<body>
+<div id="splash">
+ <div class="splash-frame">
+  <div class="stitle"><b>跳岛</b><span>ISLAND HOP</span></div>
+  <svg viewBox="0 0 375 667" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <defs>
+      <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity=".45"/></linearGradient>
+    </defs>
+    <g opacity=".22" fill="#fff"><circle cx="306" cy="128" r="34"/><circle cx="70" cy="556" r="46"/><rect x="242" y="90" width="88" height="26" rx="13"/></g>
+    <path d="M74 470 C130 392 172 384 214 330 C256 276 292 262 326 218" fill="none" stroke="url(#sg)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 12">
+      <animate attributeName="opacity" from="0" to="1" dur=".6s" begin=".15s" fill="freeze"/>
+    </path>
+    <g fill="#fff"><path d="M35 486a49 49 0 0 1 98 0z"/><path d="M165 346a42 42 0 0 1 84 0z"/><path d="M279 234a36 36 0 0 1 72 0z"/></g>
+    <g fill="#2A2D33"><circle cx="84" cy="465" r="7"/><circle cx="207" cy="333" r="6"/><circle cx="315" cy="226" r="5"/></g>
+    <circle cx="0" cy="0" r="6.5" fill="#2A2D33">
+      <animateMotion dur="1.35s" begin="0s" fill="freeze" path="M84 465 Q150 388 207 333 Q270 270 315 226"/>
+    </circle>
+    <circle cx="0" cy="0" r="11" fill="none" stroke="#2A2D33" stroke-opacity=".22" stroke-width="2">
+      <animateMotion dur="1.35s" begin="0s" fill="freeze" path="M84 465 Q150 388 207 333 Q270 270 315 226"/>
+    </circle>
+  </svg>
+  <div class="sfoot">与其想几个月，不如先跳一座岛</div>
+ </div>
+</div>
+<div id="app"></div>
+<script>
+setTimeout(()=>{const s=document.getElementById('splash');if(s){s.classList.add('out');setTimeout(()=>s.remove(),380)}},1380)
+const ICON = {
+  arrow:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>',
+  back:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5m6 6-6-6 6-6"/></svg>',
+  right:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>',
+  search:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.5-6.2 6.5-11a6.5 6.5 0 1 0-13 0c0 4.8 6.5 11 6.5 11Z"/><circle cx="12" cy="10" r="2.2"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  spark:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 13.8 9l5.7 1.8-5.7 1.8L12 18.3l-1.8-5.7-5.7-1.8L10.2 9 12 3.5Z"/></svg>',
+  compass:'<svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5.2-5.2 2 2-5.2 5.2-2Z"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>',
+  home:'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 11 8.5-7 8.5 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/></svg>',
+  map:'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2V6Z"/><path d="M9 4v14M15 6v14"/></svg>',
+  unlock:'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v5.3m0 6.4v5.3M3.5 12h5.3m6.4 0h5.3"/></svg>',
+  journal:'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3V4.5Z"/><path d="M8 8h7M8 12h7M8 16h4"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg>'
+}
+
+const DATA = {
+  user:{nickname:'林漫',islandDays:46,location:'上海 · 静安 · 3km 内'},
+  interests:[
+    ['coffee','咖啡','咖'],['photo','摄影','摄'],['design','设计','设'],['florist','花艺','花'],
+    ['baker','烘焙','焙'],['pet','宠物','宠'],['writing','写作','写'],['music','音乐','音'],
+    ['craft','手作','手'],['garden','园艺','园'],['video','短视频','影'],['community','社群','群']
+  ],
+  levels:[
+    {id:'taste',name:'初步接触',duration:'30 分钟',price:39,desc:'职业观察与交流',hint:'先看看这座岛长什么样'},
+    {id:'light',name:'轻度体验',duration:'2 小时',price:99,desc:'完成一项真实任务',hint:'多数人选这档',badge:'多数人选这档'},
+    {id:'deep',name:'深度体验',duration:'半天',price:199,desc:'参与完整辅助流程',hint:'适合想再靠近一点的人'}
+  ],
+  islands:[
+    {id:'photo',name:'摄影师',en:'PHOTOGRAPHER',glyph:'摄',g:['#9FB9D8','#C6D8EA'],price:99,duration:'2 小时',distance:'1.8km',spots:4,rating:4.8,explorers:932,hot:'本周热门',summary:'跟着摄影师走一条街，完成一次真实的人像拍摄。',tags:['拍摄过程','空间布置','独自判断']},
+    {id:'coffee',name:'咖啡师',en:'BARISTA',glyph:'咖',g:['#A9BED8','#D3E1EE'],price:99,duration:'2 小时',distance:'1.2km',spots:3,rating:4.9,explorers:1268,hot:'新手友好',summary:'从磨豆到出杯，站进吧台经历一个真实的早高峰。',tags:['与人交流','动手创造','重复性动作']},
+    {id:'design',name:'平面设计师',en:'GRAPHIC DESIGNER',glyph:'设',g:['#8FAFD2','#BBD0E6'],price:159,duration:'2 小时',distance:'2.4km',spots:2,rating:4.9,explorers:764,hot:'作品可带走',summary:'拿到一份真实需求，和设计师一起把想法排成版面。',tags:['后期修图','空间布置','细节要求高']},
+    {id:'florist',name:'花艺师',en:'FLORIST',glyph:'花',g:['#A7BEDC','#D6E3F0'],price:99,duration:'2 小时',distance:'1.6km',spots:5,rating:4.8,explorers:1102,hot:'适合周末',summary:'为一束花做配色和造型，做完可以带回家。',tags:['动手创造','空间布置','与人交流']},
+    {id:'baker',name:'烘焙师',en:'BAKER',glyph:'焙',g:['#9DB8D8','#CFDFEC'],price:99,duration:'半天',distance:'2.8km',spots:2,rating:4.7,explorers:688,hot:'半天限定',summary:'从称量到出炉，跟着烘焙师完成一条完整生产线。',tags:['动手创造','重复性动作','即时反馈']},
+    {id:'video',name:'短视频策划',en:'VIDEO CREATOR',glyph:'影',g:['#94B2D4','#C4D8EA'],price:159,duration:'2 小时',distance:'3.0km',spots:3,rating:4.8,explorers:853,hot:'团队协作',summary:'从选题到分镜，参与一条短视频诞生前的两小时。',tags:['拍摄过程','主动开口','团队协作']},
+    {id:'light',name:'灯光布景师',en:'LIGHT & SET',glyph:'光',g:['#A3BAD9','#D2E0EE'],price:159,duration:'2 小时',distance:'2.6km',spots:3,rating:4.9,explorers:412,hot:'小众方向',summary:'不站在镜头前，也能决定一个画面怎么被看见。',tags:['空间布置','动手创造','后期配合']},
+    {id:'retouch',name:'图片编辑',en:'IMAGE EDITOR',glyph:'修',g:['#96B4D6','#C9DBEC'],price:139,duration:'2 小时',distance:'2.1km',spots:4,rating:4.8,explorers:526,hot:'安静的工作',summary:'在一次修图里，练习怎么把照片变成想说的那句话。',tags:['后期修图','细节要求高','独自判断']}
+  ],
+  stores:[
+    {id:'s_coffee',islandId:'coffee',name:'雾屿咖啡 · 静安店',distance:'1.2km',duration:'2 小时',spots:3,rating:4.9,price:99,x:27,y:31,mentor:'阿澄',credential:'8 年精品咖啡 · 手冲赛事评审'},
+    {id:'s_photo',islandId:'photo',name:'见山影像工作室',distance:'1.8km',duration:'2 小时',spots:4,rating:4.8,price:159,x:68,y:23,mentor:'林一',credential:'商业人像摄影师 · 6 年'},
+    {id:'s_florist',islandId:'florist',name:'半日花房',distance:'1.6km',duration:'2 小时',spots:5,rating:4.8,price:39,x:58,y:57,mentor:'小满',credential:'花艺主理人 · 色彩课程讲师'},
+    {id:'s_design',islandId:'design',name:'留白设计事务所',distance:'2.4km',duration:'2 小时',spots:2,rating:4.9,price:99,x:22,y:70,mentor:'周予',credential:'资深视觉设计师 · 品牌主创'},
+    {id:'s_light',islandId:'light',name:'一束光棚',distance:'2.6km',duration:'2 小时',spots:3,rating:4.9,price:159,x:79,y:68,mentor:'陈桉',credential:'影视灯光师 · 20+ 品牌短片'}
+  ],
+  tasks:[
+    {id:'t1',title:'认识今天的岛',detail:'导师带你了解这份职业的一天与现场节奏',length:'5 分钟'},
+    {id:'t2',title:'旁观一次真实工作',detail:'完整看一遍导师怎么处理真实任务',length:'15 分钟'},
+    {id:'t3',title:'轮到你上手',detail:'完成一项真实的小任务，做不出来也没关系',length:'30 分钟'},
+    {id:'t4',title:'收尾与回看',detail:'一起看看刚才的过程，留下一个观察',length:'10 分钟'}
+  ],
+  moods:[['fun','很有趣'],['hard','有点难'],['unsure','说不上来'],['surprise','有意外']],
+  diary:{
+    fun:[['f_talk','和顾客交流'],['f_make','动手制作'],['f_shoot','拍摄过程'],['f_edit','后期修图'],['f_space','空间布置'],['f_finish','完成一件作品']],
+    hard:[['h_repeat','重复性动作'],['h_shoot','拍摄过程'],['h_talk','主动开口'],['h_detail','细节要求高'],['h_pace','节奏太快'],['h_solo','长时间独处']],
+    feelings:[
+      {id:'like_talk',label:'我喜欢和顾客交流的过程',tone:'positive',on:true,short:'和顾客交流'},
+      {id:'tired_repeat',label:'重复性动作让我有点疲惫',tone:'negative',on:true,short:'重复性动作'},
+      {id:'like_make',label:'亲手做出成品让我很踏实',tone:'positive',on:false,short:'亲手做成品'}
+    ]
+  },
+  seed:{
+    records:[
+      {id:'r1',date:'09.06',islandId:'design',islandName:'平面设计师',glyph:'设',level:'轻度体验',status:'revisit',memo:'排版比想象中更像解题，喜欢最后对齐的那一刻。'},
+      {id:'r2',date:'09.28',islandId:'coffee',islandName:'咖啡师',glyph:'咖',level:'初步接触',status:'excluded',memo:'出杯节奏很治愈，但重复动作多到让我放空。'},
+      {id:'r3',date:'10.14',islandId:'florist',islandName:'花艺师',glyph:'花',level:'轻度体验',status:'revisit',memo:'配色的时候完全忘了时间，想再做一次。'},
+      {id:'r4',date:'11.02',islandId:'video',islandName:'短视频策划',glyph:'影',level:'初步接触',status:'watching',memo:'开会很有意思，拍摄那一段我更想退后一步。'}
+    ],
+    preferences:[{id:'talk',label:'与人交流',score:82},{id:'make',label:'动手创造',score:74},{id:'feedback',label:'即时反馈',score:71},{id:'repeat',label:'重复性动作',score:26}],
+    insight:'你在「与人交流」和「动手创造」里最放松；重复的、需要长时间独自精细处理的环节会让你消耗。下一座岛，可以仍然需要动手，但试着离镜头远一点。'
+  },
+  rules:{
+    signals:{
+      f_talk:{coffee:3,florist:3,video:2},f_make:{florist:3,baker:3,light:2},
+      f_shoot:{photo:4,video:4,light:2},f_edit:{retouch:4,design:3,video:2},
+      f_space:{florist:3,light:4,design:2},f_finish:{design:3,baker:3,retouch:2},
+      h_repeat:{coffee:-4,baker:-4,retouch:-2},h_shoot:{photo:-5,video:-5,light:-1},
+      h_talk:{coffee:-4,video:-3},h_detail:{design:-3,retouch:-3,photo:-2},
+      h_pace:{coffee:-3,baker:-2},h_solo:{retouch:-3,photo:-2},
+      like_talk:{coffee:3,florist:2,video:2},tired_repeat:{coffee:-4,baker:-4},like_make:{baker:3,florist:3,light:2}
+    },
+    base:{coffee:2,photo:2,design:2,florist:2,baker:1,video:1,light:1,retouch:1},
+    notes:{
+      retouch:'不站在镜头前，也能决定照片最后的样子。',
+      light:'你提到喜欢布置和动手，布景是安静但可见的那一部分。',
+      design:'把想法整理成看得见的版面，节奏由你掌握。',
+      florist:'既有动手的部分，也有可以交流的部分。',
+      baker:'从称量到出炉，每一步都有明确的反馈。',
+      video:'更靠近策划和现场协作，决策空间大一些。',
+      photo:'如果你还想再试试镜头，这次由你决定怎么拍。',
+      coffee:'近距离和人打交道，节奏快，重复也多。'
+    }
+  }
+}
+
+const S = {
+  screen:'onboarding',stack:[],step:1,interests:[],nickname:'',
+  profile:{...DATA.user,interests:[]},location:DATA.user.location,
+  selectedIslandId:'coffee',storeId:null,levelId:'light',filter:'recommend',custom:['后期修图'],
+  booking:null,tasksDone:['t1'],mood:null,elapsed:84*60+16,
+  diary:{fun:['f_edit'],hard:['h_shoot'],excitement:5,feelings:DATA.diary.feelings.map(x=>({...x})),discovery:''},
+  outcome:'leave',preview:null,flowEntryId:null,
+  records:DATA.seed.records.map(x=>({...x})),preferences:DATA.seed.preferences.map(x=>({...x})),insight:DATA.seed.insight,
+  mapQuery:'',activeStore:'s_coffee',carouselIndex:0,sheet:null,toast:''
+}
+const app = document.getElementById('app')
+let toastTimer=null, timerId=null
+
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+const findIsland = id => DATA.islands.find(x=>x.id===id)
+const findLevel = id => DATA.levels.find(x=>x.id===id)
+const findStore = id => DATA.stores.find(x=>x.id===id)
+const labelOf = id => {
+  const all=[...DATA.diary.fun,...DATA.diary.hard]
+  const hit=all.find(x=>x.id===id)
+  return hit?hit[1]:(DATA.diary.feelings.find(x=>x.id===id)||{}).short||id
+}
+
+function deriveOutcome(d){
+  const e=d.excitement??5
+  const pos=d.feelings.some(f=>f.on&&f.tone==='positive')
+  const neg=d.feelings.some(f=>f.on&&f.tone==='negative')
+  if(e>=7)return 'stay'
+  if(e<=4)return 'leave'
+  if(pos&&!neg)return 'stay'
+  if(neg&&!pos)return 'leave'
+  return d.fun.length>=2?'stay':'leave'
+}
+
+function recommendations(){
+  const excluded=new Set(S.records.filter(r=>r.status==='excluded'&&r.id!==S.flowEntryId).map(r=>r.islandId))
+  const outcome=S.preview||S.outcome
+  if(outcome==='leave')excluded.add(S.selectedIslandId)
+  const signals=[]
+  S.diary.fun.forEach(id=>signals.push({id,kind:'like'}))
+  S.diary.hard.forEach(id=>signals.push({id,kind:'avoid'}))
+  S.diary.feelings.filter(f=>f.on).forEach(f=>signals.push({id:f.id,kind:f.tone==='negative'?'avoid':'like'}))
+  return DATA.islands.filter(i=>!excluded.has(i.id)).map(island=>{
+    let score=DATA.rules.base[island.id]||0
+    const tags=[]
+    signals.forEach(sig=>{
+      const w=DATA.rules.signals[sig.id]?.[island.id]||0
+      if(!w)return
+      score+=w
+      const tag=(sig.kind==='like'?'喜欢':'避开')+labelOf(sig.id)
+      if(!tags.includes(tag))tags.push(tag)
+    })
+    return {island,score,tags:tags.slice(0,2),note:DATA.rules.notes[island.id]||''}
+  }).sort((a,b)=>b.score-a.score||b.island.rating-a.island.rating).slice(0,2)
+    .map(x=>({...x,tags:x.tags.length?x.tags:['和你上次的选择不同']}))
+}
+
+function fmtTime(sec){return [Math.floor(sec/3600),Math.floor(sec%3600/60),sec%60].map(n=>String(n).padStart(2,'0')).join(':')}
+function ring(g,size,cls='',extra=''){return `<div class="ring ${cls}" style="width:${size}px;height:${size}px;${extra}"><span style="font-size:${Math.round(size*.38)}px">${esc(g)}</span></div>`}
+function pill(text,tone='default'){return `<span class="pill ${tone}">${text}</span>`}
+function btn(text,action,variant='dark',extra=''){return `<button class="btn ${variant} ${extra}" data-action="${action}"><span>${text}</span><span class="arrow">${ICON.arrow}</span></button>`}
+function hdrDeco(){return `<div class="deco"><i style="right:-48px;top:-56px;width:176px;height:176px"></i><i style="right:44px;top:96px;width:112px;height:40px"></i><i style="left:-56px;bottom:8px;width:112px;height:112px"></i><i style="left:96px;top:-32px;width:56px;height:56px"></i></div>`}
+function backBar(right=''){return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><button data-action="back" style="display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:50%;background:#fff;color:var(--ink);box-shadow:0 10px 30px rgba(85,128,176,.08)">${ICON.back}</button><span style="font-size:13px;font-weight:700"></span><div style="min-width:36px;display:flex;justify-content:flex-end">${right}</div></div>`}
+function footer(){return `<p style="margin:32px 0 8px;text-align:center;font-size:10px;color:var(--muted)">下一座岛，随时可以跳 · 不着急给人生下结论</p>`}
+
+function sceneArt(id){
+  const palettes={
+    photo:['#DCE7F2','#AFC6DE'],coffee:['#EADFD2','#CBB7A0'],design:['#E4E2EF','#C3C1DC'],
+    florist:['#E5EDDC','#BFD2B2'],baker:['#F1E5D3','#DCC3A1'],video:['#DDE4F0','#B8C5DD'],
+    light:['#EAE6D8','#D1C8AC'],retouch:['#E2E9F0','#BCCBDC']
+  }
+  const p=palettes[id]||palettes.photo
+  let art=''
+  if(id==='photo')art=`<path d="M0 138Q80 112 160 136T320 128V180H0Z" fill="#94AFCC" opacity=".45"/><circle cx="252" cy="48" r="24" fill="#fff" opacity=".7"/><g filter="url(#sh)"><rect x="88" y="66" width="146" height="80" rx="16" fill="#42536A"/><rect x="108" y="54" width="42" height="16" rx="5" fill="#35445A"/><circle cx="164" cy="106" r="35" fill="#263344"/><circle cx="164" cy="106" r="25" fill="#6E96C2"/><circle cx="164" cy="106" r="13" fill="#1E2A38"/><rect x="205" y="78" width="16" height="10" rx="3" fill="#DCE7F2"/></g><path d="M212 58l24-20M232 74l28-12" stroke="#fff" stroke-width="3" opacity=".7" stroke-linecap="round"/>`
+  else if(id==='coffee')art=`<ellipse cx="160" cy="158" rx="150" ry="22" fill="#B9A68E" opacity=".55"/><g filter="url(#sh)"><rect x="78" y="54" width="104" height="78" rx="10" fill="#5A6472"/><rect x="88" y="66" width="84" height="34" rx="6" fill="#D9E2EC"/><rect x="96" y="76" width="26" height="14" rx="3" fill="#6E96C2"/><rect x="130" y="76" width="34" height="14" rx="3" fill="#A8BED6"/><path d="M130 106h28v18h-28z" fill="#394454"/><rect x="120" y="122" width="48" height="8" rx="4" fill="#2A3340"/></g><g filter="url(#sh)"><path d="M194 102h48v26a18 18 0 0 1-18 18h-12a18 18 0 0 1-18-18z" fill="#fff"/><path d="M242 108h12a12 12 0 0 1 0 24h-12" fill="none" stroke="#fff" stroke-width="7"/><path d="M204 92q8-10 2-20M220 92q8-10 2-20M236 92q8-10 2-20" stroke="#fff" stroke-width="3" fill="none" opacity=".8" stroke-linecap="round"/></g><ellipse cx="74" cy="146" rx="10" ry="14" fill="#6B5341"/><ellipse cx="292" cy="142" rx="10" ry="14" fill="#6B5341"/>`
+  else if(id==='design')art=`<rect x="0" y="146" width="320" height="34" fill="#B7B4D2" opacity=".5"/><g filter="url(#sh)"><rect x="72" y="44" width="176" height="102" rx="9" fill="#3E4560"/><rect x="82" y="54" width="156" height="82" rx="4" fill="#F7F6FB"/><rect x="90" y="62" width="66" height="10" rx="3" fill="#6E96C2"/><rect x="90" y="80" width="42" height="48" rx="4" fill="#C6D8EA"/><rect x="138" y="80" width="92" height="8" rx="3" fill="#D8DEEC"/><rect x="138" y="94" width="72" height="8" rx="3" fill="#D8DEEC"/><rect x="138" y="108" width="82" height="8" rx="3" fill="#D8DEEC"/><rect x="138" y="122" width="46" height="8" rx="3" fill="#A8D08D"/></g><circle cx="70" cy="142" r="9" fill="#D98880"/><circle cx="92" cy="146" r="9" fill="#A8D08D"/><circle cx="114" cy="142" r="9" fill="#6E96C2"/><path d="M238 156l46-46" stroke="#8C7BA6" stroke-width="7" stroke-linecap="round"/>`
+  else if(id==='florist')art=`<path d="M0 148Q160 128 320 150V180H0Z" fill="#A9C295" opacity=".5"/><g stroke="#6F8F63" stroke-width="4" fill="none"><path d="M160 142V74M160 112l-34-28M160 104l36-30M160 128l-26 20"/></g><g fill="#7E9C70"><ellipse cx="132" cy="82" rx="20" ry="9" transform="rotate(-28 132 82)"/><ellipse cx="194" cy="74" rx="20" ry="9" transform="rotate(32 194 74)"/><ellipse cx="136" cy="142" rx="18" ry="8" transform="rotate(22 136 142)"/></g><g filter="url(#sh)" fill="#F6F3EC"><circle cx="160" cy="62" r="15"/><circle cx="143" cy="72" r="14"/><circle cx="177" cy="72" r="14"/><circle cx="151" cy="49" r="13"/><circle cx="170" cy="49" r="13"/><circle cx="132" cy="84" r="12"/><circle cx="188" cy="84" r="12"/></g><circle cx="160" cy="68" r="10" fill="#D9B26A"/><g filter="url(#sh)"><path d="M132 126h56l-8 40h-40z" fill="#8FA9C7"/><ellipse cx="160" cy="126" rx="28" ry="7" fill="#B9CFE5"/></g>`
+  else if(id==='baker')art=`<path d="M0 146h320v34H0z" fill="#CDB28E" opacity=".6"/><g filter="url(#sh)"><ellipse cx="120" cy="122" rx="58" ry="30" fill="#C98F52"/><path d="M84 112q34-22 72 0" stroke="#F0D7AF" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M98 122q28-18 58 0" stroke="#F0D7AF" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="232" cy="130" rx="42" ry="24" fill="#D9A367"/><path d="M206 124q24-16 50 0" stroke="#F7E2BE" stroke-width="5" fill="none" stroke-linecap="round"/></g><g stroke="#B08B54" stroke-width="3" fill="none"><path d="M268 108v-42M268 76q-12-14-2-24M268 82q12-14 2-24"/><path d="M282 108V70M282 84q-10-12-2-20"/></g><rect x="40" y="148" width="92" height="9" rx="4" fill="#8C6F4D" opacity=".7"/>`
+  else if(id==='video')art=`<path d="M0 0h320v180H0z" fill="none"/><g filter="url(#sh)"><rect x="70" y="62" width="180" height="86" rx="10" fill="#39465C"/><rect x="82" y="76" width="156" height="58" rx="4" fill="#DDE6F1"/><path d="M70 62l180-22v26L70 88z" fill="#2A3548"/><g fill="#DDE6F1"><path d="M88 60l14-2 8 20-14 2zM122 56l14-2 8 20-14 2zM156 52l14-2 8 20-14 2zM190 48l14-2 8 20-14 2z"/></g><path d="M150 92l34 15-34 15z" fill="#6E96C2"/></g><g stroke="#fff" stroke-width="2" opacity=".6"><path d="M44 48h20M44 60h12M44 72h20"/></g>`
+  else if(id==='light')art=`<path d="M92 62h58l74 92H18z" fill="#F4EBCF" opacity=".75"/><g filter="url(#sh)"><rect x="66" y="40" width="92" height="48" rx="10" fill="#4B5264"/><rect x="76" y="48" width="72" height="32" rx="5" fill="#F5EFDB"/><circle cx="150" cy="64" r="12" fill="#E3C878"/><path d="M112 88v58M82 146h60" stroke="#4B5264" stroke-width="6" stroke-linecap="round"/></g><g filter="url(#sh)"><rect x="212" y="72" width="64" height="54" rx="6" fill="#F8F3E6" stroke="#B6AC8D" stroke-width="4"/><path d="M244 126v24M224 150h40" stroke="#6E6A5C" stroke-width="5" stroke-linecap="round"/></g>`
+  else art=`<g filter="url(#sh)"><rect x="64" y="46" width="130" height="96" rx="9" fill="#fff"/><rect x="72" y="54" width="114" height="68" rx="4" fill="#9FB9D8"/><circle cx="100" cy="76" r="9" fill="#F4E2B8"/><path d="M74 120l32-34 24 24 18-18 36 34z" fill="#6E96C2"/><rect x="72" y="128" width="72" height="5" rx="2" fill="#C6D8EA"/></g><g filter="url(#sh)"><rect x="204" y="54" width="62" height="82" rx="10" fill="#F7F8FB"/><path d="M218 76h34M218 92h34M218 108h34" stroke="#C6D8EA" stroke-width="4" stroke-linecap="round"/><circle cx="230" cy="76" r="6" fill="#6E96C2"/><circle cx="244" cy="92" r="6" fill="#A8D08D"/><circle cx="226" cy="108" r="6" fill="#D98880"/></g><circle cx="210" cy="134" r="22" fill="none" stroke="#6E96C2" stroke-width="5"/><path d="M226 150l16 16" stroke="#6E96C2" stroke-width="6" stroke-linecap="round"/>`
+  return `<div class="scene"><svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="bg_${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p[0]}"/><stop offset="1" stop-color="${p[1]}"/></linearGradient><filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#2A2D33" flood-opacity=".18"/></filter></defs><rect width="320" height="180" fill="url(#bg_${id})"/>${art}</svg>${id==='coffee'?'<div class="coffee-photo"></div>':''}</div><div class="scene-scrim"></div>`
+}
+
+function viewOnboarding(){
+  const step1=`
+    <p style="font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--primary)">01 / YOUR CURIOSITY</p>
+    <h1 style="margin:12px 0 0;font-size:27px;line-height:1.35;letter-spacing:-.4px">选择你的兴趣与好奇</h1>
+    <p style="margin:12px 0 0;font-size:13px;line-height:1.8;color:var(--muted)">不用想清楚为什么。选中几个让你愿意多看一眼的方向就够了。</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:28px">
+      ${DATA.interests.map(([id,label,glyph])=>{
+        const on=S.interests.includes(id)
+        return `<button data-action="interest" data-id="${id}" style="height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px solid ${on?'var(--mist)':'var(--line)'};border-radius:18px;background:${on?'var(--mist)':'#fff'};color:${on?'var(--deep)':'var(--ink)'}">${ring(glyph,34)}<span style="font-size:12px;font-weight:600">${label}</span></button>`
+      }).join('')}
+    </div>
+    <p id="interestCount" style="margin-top:20px;text-align:center;font-size:11px;color:var(--muted)">已选 ${S.interests.length} 个 · 随便选，之后都可以改</p>`
+  const step2=`
+    <p style="font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--primary)">02 / YOUR NAME</p>
+    <h1 style="margin:12px 0 0;font-size:27px;line-height:1.35;letter-spacing:-.4px">怎么称呼你？</h1>
+    <p style="margin:12px 0 0;font-size:13px;line-height:1.8;color:var(--muted)">跳岛日志会记下你走过的岛，但不会替你下结论。</p>
+    <div class="card" style="padding:20px;margin-top:32px">
+      <label for="nick" style="font-size:11px;color:var(--muted)">昵称</label>
+      <input id="nick" class="text" data-field="nickname" maxlength="12" value="${esc(S.nickname)}" placeholder="林漫">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding:12px 14px;border-radius:18px;background:var(--page);font-size:12px;color:var(--muted)">
+        <span>跳岛日志从第 ${DATA.user.islandDays} 天开始</span><span style="font-weight:700;color:var(--deep)">${S.interests.length} 个兴趣</span>
+      </div>
+    </div>
+    <div style="margin-top:20px;padding:16px;border-radius:18px;border:1px solid rgba(198,216,234,.7);background:rgba(234,241,248,.6);font-size:12px;line-height:1.8;color:var(--deep)">这里没有测评，也没有答案。只有一座座岛，等你上去看看。</div>`
+  return `<div class="screen pad" style="padding-top:48px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div><p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.26em;color:var(--primary)">ISLAND HOP</p><p style="margin:4px 0 0;font-size:15px;font-weight:700">跳岛</p></div>
+      ${pill('STEP '+S.step+'/2','glasspill')}
+    </div>
+    <div style="display:flex;gap:6px;margin:28px 0 0"><span style="height:4px;flex:1;border-radius:99px;background:${S.step>=1?'var(--deep)':'var(--line)'}"></span><span style="height:4px;flex:1;border-radius:99px;background:${S.step>=2?'var(--deep)':'var(--line)'}"></span></div>
+    <div style="margin-top:36px">${S.step===1?step1:step2}</div>
+    <div style="margin-top:auto;padding-top:40px">
+      ${btn(S.step===1?'下一步':'开始我的探索',S.step===1?'onboard-next':'onboard-finish')}
+      <button data-action="onboard-skip" style="display:block;margin:16px auto 0;border:0;background:none;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:4px">跳过，先随便逛逛</button>
+    </div>
+  </div>`
+}
+
+function viewHome(){
+  const active=findIsland(S.selectedIslandId)||DATA.islands[0]
+  return `<div class="screen">
+    <div class="hdr" style="padding-bottom:76px">${hdrDeco()}<div class="content">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div><p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.26em;color:rgba(85,128,176,.7)">ISLAND HOP / 跳岛</p><p style="margin:16px 0 0;font-size:12px;color:rgba(85,128,176,.85)">嗨，${esc(S.profile.nickname)} · 探索第 ${S.profile.islandDays} 天</p></div>
+        <button class="pill glasspill" data-action="location" title="修改定位">${ICON.pin} ${esc(S.location.split(' · ').slice(0,2).join(' · '))} ${ICON.chev}</button>
+      </div>
+      <h1 style="margin:20px 0 0;font-size:30px;line-height:1.2;letter-spacing:-.8px">下一座岛，哪座？</h1>
+      <p style="margin:8px 0 0;max-width:220px;font-size:12px;line-height:1.6;color:rgba(85,128,176,.85)">与其想几个月，不如先跳一座岛。</p>
+      ${ring('岛',88,'glass','position:absolute;right:28px;top:96px;opacity:.8;z-index:3')}
+    </div></div>
+    <div class="pad overlap" style="margin-top:-36px">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--primary)">FOR YOU</p><h2 style="margin:4px 0 0;font-size:17px">为你推荐</h2></div>
+          <button data-action="nav-map" style="border:0;background:none;color:var(--muted);font-size:11px">看看附近 ›</button>
+        </div>
+        <div id="carousel" class="hide-scroll" style="display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;margin:0 -4px">
+          ${DATA.islands.map(i=>`<button class="island-card scene-card ${i.id===active.id?'sel-island':''}" data-action="pick-island" data-id="${i.id}" style="scroll-snap-align:start">
+            ${sceneArt(i.id)}
+            <div style="position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between"><span class="pill glasspill" style="color:var(--deep)">${i.hot}</span><span class="glass-strong" style="display:grid;place-items:center;width:32px;height:32px;border-radius:50%;color:var(--deep)">${ICON.arrow}</span></div>
+            ${i.id==='coffee'?'<div style="height:18px"></div>':`<div style="position:relative;z-index:2;margin-top:18px;display:flex;justify-content:center">${ring(i.glyph,100)}</div>`}
+            <div style="position:relative;z-index:2;margin-top:16px"><p style="margin:0;font-size:9px;font-weight:700;letter-spacing:.18em;color:rgba(85,128,176,.8)">${i.en}</p><h3 style="margin:2px 0 0;font-size:21px;letter-spacing:-.4px">${i.name}</h3></div>
+            <div style="position:relative;z-index:2;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.6);display:flex;justify-content:space-between;font-size:11px;color:var(--deep)"><span>${i.duration} · ${i.distance}</span><b>¥${i.price} 起</b></div>
+          </button>`).join('')}
+        </div>
+        <div id="dots" class="dots" style="margin-top:12px">${DATA.islands.map((i,idx)=>`<button data-action="dot" data-index="${idx}" class="${idx===S.carouselIndex?'on':''}"></button>`).join('')}</div>
+        <div style="margin-top:20px">
+          ${btn('预约这次体验','open-detail','deep')}
+          <p id="homeHint" style="margin:12px 0 0;text-align:center;font-size:11px;color:var(--muted)">${S.booking?'有一次体验正在进行，随时可以继续。':'先看看，再决定要不要留下。'}</p>
+          ${S.booking?`<button data-action="continue" style="display:block;margin:8px auto 0;border:0;background:none;color:var(--primary);font-size:11px;font-weight:700">继续上次体验 →</button>`:''}
+        </div>
+      </div>
+      <div style="margin-top:24px"><div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:16px">离你很近</h2><button data-action="nav-map" style="border:0;background:none;color:var(--muted);font-size:11px">打开地图 →</button></div>
+        <div style="margin-top:12px;display:grid;gap:10px">${DATA.islands.slice(2,4).map(i=>`<div class="card click" data-action="open-detail-id" data-id="${i.id}" style="display:flex;align-items:center;gap:12px;padding:14px">${ring(i.glyph,46)}<div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;font-weight:700">${i.name}</p><p style="margin:3px 0 0;font-size:11px;color:var(--muted)">${i.distance} · ${i.duration} · ${i.rating} 分</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`).join('')}</div>
+      </div>
+      <div class="card" style="padding:20px;margin-top:24px">
+        <p style="margin:0;font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--primary)">HOW IT WORKS</p><h2 style="margin:4px 0 0;font-size:16px">跳岛，不用一次想清楚</h2>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:16px">${[['登岛','用半天试试看'],['离岛 / 再登岛','都算有收获'],['跳岛日志','只记观察，不定论']].map(([t,d],idx)=>`<div style="flex:1;min-width:0"><p style="margin:0;font-size:11px;font-weight:700;color:var(--deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t}</p><p style="margin:4px 0 0;font-size:10px;line-height:1.4;color:var(--muted)">${d}</p></div>${idx<2?'<span style="width:10px;height:1px;background:var(--line);flex:none"></span>':''}`).join('')}</div>
+      </div>
+      ${footer()}
+    </div>
+  </div>`
+}
+
+function viewMap(){
+  return `<div class="screen">
+    <div style="background:#fff;padding:40px 20px 20px">
+      <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.22em;color:var(--primary)">NEARBY ISLANDS</p>
+      <h1 style="margin:8px 0 0;font-size:25px;letter-spacing:-.5px">附近的岛</h1>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:16px;padding:12px 16px;border-radius:999px;background:var(--page);color:var(--primary)">${ICON.search}<input data-field="mapQuery" value="${esc(S.mapQuery)}" placeholder="${esc(S.location)}" style="width:100%;border:0;background:transparent;outline:none;font-size:12px;color:var(--ink)"><button data-action="location" title="修改定位" style="display:grid;place-items:center;border:0;background:none;color:var(--primary)">${ICON.pin}</button></div>
+    </div>
+    <div class="map">
+      <div class="road" style="left:-10%;top:34%;width:130%;height:12px;transform:rotate(-12deg)"></div>
+      <div class="road" style="left:18%;top:-10%;width:8px;height:130%;transform:rotate(12deg)"></div>
+      <div class="road" style="left:-20%;top:72%;width:140%;height:8px;transform:rotate(8deg);opacity:.7"></div>
+      <div class="road" style="left:56%;top:-10%;width:6px;height:130%;transform:rotate(-6deg);opacity:.8"></div>
+      <div class="ping"></div>
+      ${DATA.stores.map(st=>`<button class="pin ${st.id===S.activeStore?'active':''}" data-action="store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="pin-orb">${findIsland(st.islandId).glyph}</span></button>`).join('')}
+      <div style="position:absolute;left:16px;bottom:12px;padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.85);font-size:10px;color:var(--deep);backdrop-filter:blur(8px)">已定位 · 静安寺周边</div>
+    </div>
+    <div class="pad" style="padding-top:20px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:16px">附近 ${DATA.stores.length} 座岛</h2><span style="font-size:11px;color:var(--muted)">按距离排序</span></div>
+      <div id="storeTrack" class="hide-scroll" style="display:flex;gap:12px;overflow-x:auto;margin:12px -4px 0;padding:0 4px 8px">
+        ${DATA.stores.map(st=>{
+          const i=findIsland(st.islandId)
+          return `<div class="store-card click" data-action="store" data-store="${st.id}" style="width:278px;flex:none;padding:14px;border-radius:22px;background:#fff;box-shadow:${st.id===S.activeStore?'inset 0 0 0 2px var(--deep)':'0 10px 30px rgba(85,128,176,.08)'}">
+            <div class="scene-card" style="height:92px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-radius:18px">
+              ${sceneArt(i.id)}
+              <div style="position:relative;z-index:2"><p style="margin:0;font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--deep)">${i.en}</p><p style="margin:8px 0 0;font-size:10px;color:var(--deep)">门店实景 · 已认证导师</p></div>${ring(i.glyph,56,'','height:56px;width:56px;position:relative;z-index:2')}
+            </div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:12px"><div style="min-width:0;flex:1"><p style="margin:0;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${st.name}</p><p style="margin:4px 0 0;font-size:10px;color:var(--muted)">${st.distance} · ${st.duration} · 余${st.spots}位 · ${st.rating}分</p></div>${pill('认证','green')}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px"><span style="font-size:15px;font-weight:800">¥${st.price}<span style="font-size:10px;font-weight:400;color:var(--muted)"> 起</span></span><button class="btn deep compact" data-action="open-detail-store" data-island="${st.islandId}" data-store="${st.id}" style="width:auto"><span>预约体验</span><span class="arrow">${ICON.arrow}</span></button></div>
+          </div>`
+        }).join('')}
+      </div>
+      <p id="mapEmpty" class="smallnote" style="display:none;text-align:center;padding:24px;background:#fff;border-radius:22px">没有找到这座岛，换个关键词试试。</p>
+      <p class="smallnote" style="text-align:center;margin-top:20px">距离和余位是模拟数据 · 下一座岛，随时可以跳</p>
+    </div>
+  </div>`
+}
+
+function viewDetail(){
+  const i=findIsland(S.selectedIslandId)||DATA.islands[0]
+  const lv=findLevel(S.levelId)
+  const st=findStore(S.storeId)||DATA.stores.find(x=>x.islandId===i.id)||DATA.stores[0]
+  let feed=DATA.islands.filter(x=>x.id!==i.id)
+  if(S.filter==='near')feed=[...feed].sort((a,b)=>parseFloat(a.distance)-parseFloat(b.distance))
+  if(S.filter==='quick')feed=feed.filter(x=>x.price<=139)
+  if(S.filter==='custom'&&S.custom.length)feed=feed.filter(x=>x.tags.some(t=>S.custom.includes(t)))
+  const filters=[['recommend','为你推荐'],['near','附近优先'],['quick','30分钟速试'],['custom','＋自定义']]
+  return `<div class="screen" style="padding-bottom:120px">
+    <div class="hdr tight" style="padding-bottom:32px">${hdrDeco()}<div class="content">
+      ${backBar(pill('第 46 天','glasspill'))}
+      <p style="margin:16px 0 0;font-size:10px;font-weight:700;letter-spacing:.22em;color:rgba(85,128,176,.7)">ISLAND DETAIL</p>
+      <h1 style="margin:8px 0 0;font-size:26px;letter-spacing:-.6px">嗨，先看看这座岛</h1>
+      <p style="margin:8px 0 0;font-size:12px;color:rgba(85,128,176,.85)">看过了再决定，不必现在就有答案。</p>
+    </div></div>
+    <div class="pad" style="padding-top:20px">
+      <div class="hide-scroll" style="display:flex;gap:8px;overflow-x:auto;margin:0 -4px;padding:0 4px 4px">
+        ${filters.map(([id,label])=>`<button class="pill ${S.filter===id?'dark':'default'}" data-action="filter" data-id="${id}">${label}</button>`).join('')}
+      </div>
+      ${S.filter==='custom'?`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">${['后期修图','拍摄过程','动手创造','与人交流'].map(t=>`<button class="chip ${S.custom.includes(t)?'on':''}" data-action="custom" data-id="${t}">${t}</button>`).join('')}</div>`:''}
+      <div class="card" style="margin-top:16px;overflow:hidden">
+        <div class="scene-card" style="height:172px;position:relative;overflow:hidden;padding:20px">
+          ${sceneArt(i.id)}
+          <div class="glass-strong" style="position:absolute;right:-40px;top:-48px;width:160px;height:160px;border-radius:50%;z-index:2"></div>
+          <div class="glass" style="position:absolute;right:64px;top:80px;width:96px;height:40px;border-radius:99px;z-index:2"></div>
+          <div style="position:relative;z-index:3">${pill(i.hot,'glasspill')}</div>
+          ${ring(i.glyph,88,'glass','position:absolute;right:24px;top:40px;z-index:3')}
+          <p style="position:absolute;left:20px;bottom:20px;margin:0;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--deep);z-index:3">${i.en}</p>
+        </div>
+        <div style="padding:20px">
+          <h2 style="margin:0;font-size:23px;letter-spacing:-.5px">${i.name}</h2>
+          <p style="margin:8px 0 0;font-size:12px;line-height:1.8;color:var(--muted)">${i.summary}</p>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);margin-top:20px;padding:14px 0;border-radius:18px;background:var(--page);text-align:center">
+            <div><span style="color:var(--primary)">${ICON.pin}</span><p style="margin:6px 0 0;font-size:11px;font-weight:700">${i.distance}</p><p style="margin:2px 0 0;font-size:9px;color:var(--muted)">距离</p></div>
+            <div style="border-left:1px solid var(--line)"><span style="color:var(--primary)">${ICON.clock}</span><p style="margin:6px 0 0;font-size:11px;font-weight:700">${i.duration}</p><p style="margin:2px 0 0;font-size:9px;color:var(--muted)">时长</p></div>
+            <div style="border-left:1px solid var(--line)"><span style="color:var(--primary)">${ICON.spark}</span><p style="margin:6px 0 0;font-size:11px;font-weight:700">导师带练</p><p style="margin:2px 0 0;font-size:9px;color:var(--muted)">真实任务</p></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
+            <div><p style="margin:0;font-size:10px;color:var(--muted)">${i.explorers} 人已登岛 · 余 ${i.spots} 位</p><p style="margin:2px 0 0;font-size:19px;font-weight:800">¥${i.price}<span style="font-size:11px;font-weight:400;color:var(--muted)"> 起</span></p></div>
+            <button class="btn deep compact" data-action="scroll-levels" style="width:auto"><span>选登岛方式</span><span class="arrow">${ICON.arrow}</span></button>
+          </div>
+        </div>
+      </div>
+      <div id="levels" style="margin-top:28px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:17px">选择登岛方式</h2><span style="font-size:11px;color:var(--muted)">随时可以换一档</span></div>
+        <div style="display:grid;gap:10px;margin-top:12px">
+          ${DATA.levels.map(l=>{
+            const on=l.id===S.levelId
+            return `<button data-action="level" data-id="${l.id}" style="padding:16px;border:1px solid ${on?'var(--deep)':'var(--line)'};border-radius:22px;background:${on?'rgba(234,241,248,.7)':'#fff'};text-align:left">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><p style="margin:0;font-size:14px;font-weight:700">${l.name}<span style="margin-left:8px;font-size:11px;font-weight:400;color:var(--muted)">${l.duration}</span></p><p style="margin:6px 0 0;font-size:11px;color:var(--muted)">${l.desc}</p></div><span style="display:grid;place-items:center;width:20px;height:20px;flex:none;border:1px solid ${on?'var(--deep)':'var(--line)'};border-radius:50%;background:${on?'var(--deep)':'transparent'};color:#fff">${on?ICON.check:''}</span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px"><span style="font-size:15px;font-weight:800">¥${l.price}</span>${l.badge?pill(l.badge,'green'):''}</div>
+            </button>`
+          }).join('')}
+        </div>
+      </div>
+      <div class="card" style="padding:16px;margin-top:24px">
+        <div style="display:flex;align-items:center;gap:12px">${ring(st.mentor.slice(0,1),48)}<div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;font-weight:700">${st.mentor} · 带你登岛</p><p style="margin:4px 0 0;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${st.credential}</p></div>${pill('已认证','green')}</div>
+        <p style="margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:10px;line-height:1.7;color:var(--muted)">${st.name} · ${st.distance} · 导师会带你做真实任务，做不出来也没关系。</p>
+      </div>
+      <div style="margin-top:28px"><h2 style="margin:0 0 12px;font-size:17px">推荐下一座岛</h2><div style="display:grid;gap:10px">
+        ${feed.slice(0,3).map(x=>`<div class="card click" data-action="open-detail-id" data-id="${x.id}" style="display:flex;align-items:center;gap:12px;padding:12px">${ring(x.glyph,44)}<div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;font-weight:700">${x.name}</p><p style="margin:3px 0 0;font-size:10px;color:var(--muted)">${x.distance} · ${x.duration} · ¥${x.price} 起</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`).join('')||'<p class="smallnote" style="padding:20px;text-align:center;background:#fff;border-radius:22px">这个筛选下暂时没有别的岛。</p>'}
+      </div></div>
+      <p style="text-align:center;font-size:10px;color:var(--muted);margin-top:24px">登岛不是承诺，只是一段真实的时间。</p>
+    </div>
+    <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:12px;width:100%;max-width:375px;padding:12px 20px;border-top:1px solid var(--line);background:rgba(255,255,255,.95);backdrop-filter:blur(10px)">
+      <div style="flex:none"><p style="margin:0;font-size:10px;color:var(--muted)">${lv.duration} · ${lv.name}</p><p style="margin:2px 0 0;font-size:19px;font-weight:800;line-height:1.1">¥${lv.price}</p></div>
+      ${btn('确认预约 · 登岛','book')}
+    </div>
+  </div>`
+}
+
+function viewExperience(){
+  const i=findIsland(S.selectedIslandId), lv=findLevel(S.levelId)
+  const done=S.tasksDone.length
+  const complete=done===DATA.tasks.length
+  return `<div class="screen">
+    <div class="hdr" style="padding-bottom:64px">${hdrDeco()}<div class="content">
+      ${backBar(pill('导师带练中','glasspill'))}
+      <div style="display:flex;align-items:center;gap:8px;margin-top:16px"><span style="width:8px;height:8px;border-radius:50%;background:var(--okay);box-shadow:0 0 0 4px rgba(168,208,141,.35)"></span><span style="font-size:11px;font-weight:600;color:var(--deep)">体验进行中</span></div>
+      <h1 style="margin:12px 0 0;font-size:27px;letter-spacing:-.6px">登岛：${i.name}</h1>
+      <p style="margin:8px 0 0;font-size:12px;color:rgba(85,128,176,.85)">${lv.name} · ${lv.duration} · 不用急，跟着导师走。</p>
+      <div class="glass-strong" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:8px 16px;border-radius:99px"><span style="color:var(--deep)">${ICON.clock}</span><span id="timer" style="font-size:15px;font-weight:700;letter-spacing:.5px;font-variant-numeric:tabular-nums">${fmtTime(S.elapsed)}</span></div>
+    </div></div>
+    <div class="pad overlap" style="margin-top:-28px">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:16px">任务进度</h2><span style="font-size:12px;font-weight:600;color:var(--primary)">${done} / ${DATA.tasks.length} 已完成</span></div>
+        <div style="height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:12px"><div style="height:100%;border-radius:99px;background:var(--primary);width:${done/DATA.tasks.length*100}%;transition:width .4s"></div></div>
+        <div style="display:grid;gap:10px;margin-top:20px">
+          ${DATA.tasks.map((t,idx)=>{
+            const isDone=S.tasksDone.includes(t.id)
+            const prev=DATA.tasks.slice(0,idx).every(x=>S.tasksDone.includes(x.id))
+            const current=!isDone&&prev
+            return `<button class="task ${isDone?'done':''} ${current?'current':''}" data-action="task" data-id="${t.id}"><span class="tickbox">${ICON.check}</span><span style="flex:1;min-width:0"><span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b style="font-size:13px;color:${isDone?'var(--muted)':'var(--ink)'}">${t.title}</b><small style="font-size:10px;color:var(--muted);flex:none">${t.length}</small></span><span style="display:block;margin-top:4px;font-size:11px;line-height:1.6;color:var(--muted)">${t.detail}</span></span></button>`
+          }).join('')}
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;padding:20px;border:1px solid rgba(198,216,234,.6);background:rgba(234,241,248,.6);box-shadow:none">
+        <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--primary)">MENTOR NOTE</p>
+        <p style="margin:8px 0 0;font-size:13px;line-height:1.8;color:var(--deep)">“不用急着做得好，先注意自己哪一刻注意力最集中。”</p>
+        <p style="margin:8px 0 0;font-size:10px;color:var(--muted)">— 今天的带练导师</p>
+      </div>
+      <div style="margin-top:24px"><h2 style="margin:0;font-size:16px">此刻感觉如何？</h2><p style="margin:4px 0 0;font-size:11px;color:var(--muted)">随手记一下，等下写日记时用得上。</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">${DATA.moods.map(([id,label])=>`<button data-action="mood" data-id="${id}" style="padding:14px;border-radius:18px;border:1px solid ${S.mood===id?'var(--deep)':'var(--line)'};background:${S.mood===id?'var(--deep)':'#fff'};color:${S.mood===id?'#fff':'var(--ink)'};font-size:12px;font-weight:600">${label}</button>`).join('')}</div>
+      </div>
+      <div style="margin-top:28px">${btn(complete?'完成体验，写日记':`还有 ${DATA.tasks.length-done} 个任务`,'finish-experience','dark',complete?'':'disabled')}${!complete?'<p class="smallnote" style="text-align:center;margin-top:12px">点一下任务卡就能打卡，做不完也可以跳过。</p>':''}</div>
+    </div>
+  </div>`
+}
+
+function viewDiary(){
+  const d=S.diary
+  const exciteText=['几乎没什么感觉','有一点点好奇','还算平静','有一点投入','比较投入','挺兴奋的','很兴奋','非常兴奋','几乎不想停','完全沉浸'][d.excitement-1]
+  return `<div class="screen">
+    <div class="hdr tight" style="padding-bottom:36px">${hdrDeco()}<div class="content">
+      ${backBar('<span style="font-size:10px;color:rgba(85,128,176,.7)">STEP 7/8</span>')}
+      <p style="margin:16px 0 0;font-size:10px;font-weight:700;letter-spacing:.22em;color:rgba(85,128,176,.7)">EXPERIENCE JOURNAL</p>
+      <h1 style="margin:8px 0 0;font-size:26px;letter-spacing:-.5px">体验日记</h1>
+      <p style="margin:8px 0 0;font-size:12px;line-height:1.7;color:rgba(85,128,176,.85)">这次不是评价商家，是记下你自己的感受。<br>${findIsland(S.selectedIslandId).name} · 今天</p>
+    </div></div>
+    <div class="pad" style="padding-top:20px;display:grid;gap:14px">
+      <div class="card" style="padding:20px"><p style="margin:0;font-size:12px;font-weight:700">01 · 哪个环节最有意思？<span style="font-weight:400;color:var(--muted)"> 可多选</span></p><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">${DATA.diary.fun.map(([id,label])=>`<button class="chip ${d.fun.includes(id)?'on':''}" data-action="diary-chip" data-group="fun" data-id="${id}">${label}</button>`).join('')}</div></div>
+      <div class="card" style="padding:20px"><p style="margin:0;font-size:12px;font-weight:700">02 · 哪个环节最困难？<span style="font-weight:400;color:var(--muted)"> 可多选</span></p><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">${DATA.diary.hard.map(([id,label])=>`<button class="chip hard ${d.hard.includes(id)?'on':''}" data-action="diary-chip" data-group="hard" data-id="${id}">${label}</button>`).join('')}</div><p class="smallnote" style="margin-top:12px">困难不是扣分，它只是告诉你这座岛哪块石头硌脚。</p></div>
+      <div class="card" style="padding:20px"><div style="display:flex;align-items:baseline;justify-content:space-between"><p style="margin:0;font-size:12px;font-weight:700">03 · 此刻的兴奋程度</p><p style="margin:0"><b id="exciteVal" style="font-size:13px;color:var(--deep)">${d.excitement}</b><span style="font-size:10px;color:var(--muted)"> / 10</span></p></div><input class="slider" type="range" min="1" max="10" value="${d.excitement}" data-field="excitement" style="--p:${(d.excitement-1)/9*100}%;margin-top:20px"><div style="display:flex;justify-content:space-between;margin-top:12px;font-size:10px;color:var(--muted)"><span>平静</span><span id="exciteLabel" style="color:var(--primary)">${exciteText}</span><span>兴奋</span></div></div>
+      <div class="card" style="padding:20px"><p style="margin:0;font-size:12px;font-weight:700">04 · 这些感受像你吗？</p><div style="display:grid;gap:10px;margin-top:16px">${d.feelings.map(f=>`<button class="switchrow" data-action="feeling" data-id="${f.id}"><span>${f.label}</span><span class="sw ${f.on?'on':''} ${f.tone==='negative'?'neg':''}"></span></button>`).join('')}</div></div>
+      <div class="card" style="padding:20px"><p style="margin:0;font-size:12px;font-weight:700">05 · 有没有一点意外发现？</p><textarea class="field" data-field="discovery" rows="4" maxlength="160" placeholder="比如：我以为自己会不喜欢和陌生人说话，结果那一段最有意思……">${esc(d.discovery)}</textarea><p style="margin:8px 0 0;text-align:right;font-size:10px;color:var(--muted)"><span id="discCount">${d.discovery.length}</span> / 160</p></div>
+      <div>${btn('生成我的探索记录','diary-submit')}<p class="smallnote" style="text-align:center;margin-top:12px">没有标准答案，这只是你给自己的一个观察位置。</p></div>
+    </div>
+  </div>`
+}
+
+function viewResult(){
+  const outcome=S.preview||S.outcome, leave=outcome==='leave', actual=deriveOutcome(S.diary)
+  const isPreview=outcome!==actual
+  const i=findIsland(S.selectedIslandId), lv=findLevel(S.levelId)
+  const recs=recommendations()
+  return `<div class="screen">
+    <div class="hdr" style="padding-bottom:56px">${hdrDeco()}<div class="content">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">${pill('EXPLORATION RECORD','glasspill')}<div class="glass-strong" style="display:grid;place-items:center;width:70px;height:70px;border-radius:50%;color:var(--deep)">${ICON.compass}</div></div>
+      <p style="margin:32px 0 0;font-size:11px;color:rgba(85,128,176,.85)">${i.name} · ${lv.name} · 今天</p>
+      <h1 style="margin:12px 0 0;font-size:28px;line-height:1.35;letter-spacing:-.8px">${leave?'这座岛，你登过了':'这座岛，你想再登一次'}</h1>
+      <p style="margin:12px 0 0;max-width:300px;font-size:12px;line-height:1.9;color:rgba(85,128,176,.85)">${leave?'登过一座岛、看过、决定不留下，你排除掉一个可能不适合的方向，也省下了未来几个月的纠结。':'喜欢也不需要马上变成答案。你想再靠近一点，就把它记进跳岛日志，继续观察。'}</p>
+      ${isPreview?`<p style="display:inline-block;margin-top:16px;padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.5);font-size:10px;color:var(--deep)">预览中 · 本次记录仍为「${actual==='leave'?'离岛排除':'想再登岛'}」</p>`:''}
+    </div></div>
+    <div class="pad overlap" style="margin-top:-26px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${[['+1','登岛完成','#5F8F52'],['+1',leave?'离岛排除':'想再登岛',leave?'var(--muted)':'#5F8F52'],['+2','自我新发现','var(--primary)']].map(([v,l,c])=>`<div class="card" style="padding:16px 8px;text-align:center"><p style="margin:0;font-size:20px;font-weight:800;color:${c}">${v}</p><p style="margin:4px 0 0;font-size:10px;color:var(--muted)">${l}</p></div>`).join('')}
+      </div>
+      <div style="margin-top:24px"><div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:17px">推荐下一座岛</h2><span style="font-size:10px;color:var(--muted)">基于这次反馈</span></div>
+        <div style="display:grid;gap:10px;margin-top:12px">${recs.map(({island:next,tags,note})=>`<div class="card click" data-action="open-detail-id" data-id="${next.id}" style="padding:16px"><div style="display:flex;align-items:center;gap:12px">${ring(next.glyph,48)}<div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><b style="font-size:14px">${next.name}</b><b style="font-size:12px;color:var(--deep);flex:none">¥${next.price}</b></div><p style="margin:2px 0 0;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${next.en} · ${next.distance} · ${next.duration}</p></div><span style="color:var(--muted)">${ICON.right}</span></div><p style="margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:11px;line-height:1.6;color:var(--deep)">${note}</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${tags.map(t=>pill(t,t.startsWith('避开')?'red':'green')).join('')}</div></div>`).join('')}</div>
+      </div>
+      <div class="card" style="display:flex;align-items:flex-start;gap:12px;margin-top:20px;padding:16px;border:none;background:rgba(234,241,248,.6);box-shadow:none"><span style="color:var(--primary);margin-top:2px">${ICON.spark}</span><p style="margin:0;font-size:11px;line-height:1.7;color:var(--deep)">推荐只是下一座岛的候选，不是答案。不想去，就先放着。</p></div>
+      <div style="display:grid;gap:12px;margin-top:28px">${btn('去看看跳岛日志','result-journal')}<button data-action="result-home" style="display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:none;color:var(--primary);font-size:12px;font-weight:600">再跳一座岛 ${ICON.arrow}</button><button data-action="result-preview" style="display:block;margin:2px auto 0;border:0;background:none;color:var(--muted);font-size:10px;text-decoration:underline;text-underline-offset:4px">${isPreview?'回到本次结果':'看看另一种结果'}</button></div>
+      ${footer()}
+    </div>
+  </div>`
+}
+
+function viewJournal(){
+  const stats=[S.records.length,S.records.filter(r=>r.status==='excluded').length,S.records.filter(r=>r.status==='revisit').length]
+  const meta={revisit:['想再登岛','green'],excluded:['已排除','outline'],watching:['待观察','mist']}
+  return `<div class="screen">
+    <div class="hdr" style="padding-bottom:64px">${hdrDeco()}<div class="content">
+      <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.22em;color:rgba(85,128,176,.7)">ISLAND JOURNAL</p>
+      <h1 style="margin:12px 0 0;font-size:27px;letter-spacing:-.6px">跳岛日志</h1>
+      <p style="margin:6px 0 0;font-size:12px;color:rgba(85,128,176,.85)">跳岛的第 ${S.profile.islandDays} 天 · ${esc(S.profile.nickname)}</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:24px">${[['已登岛 · 座'],['离岛排除 · 座'],['想再登岛 · 座']].map(([l],idx)=>`<div class="glass-strong" style="padding:12px 8px;border-radius:18px;text-align:center"><p style="margin:0;font-size:21px;font-weight:800;line-height:1">${stats[idx]}</p><p style="margin:6px 0 0;font-size:9px;color:rgba(85,128,176,.85)">${l}</p></div>`).join('')}</div>
+    </div></div>
+    <div class="pad overlap" style="margin-top:-28px">
+      <div class="card" style="padding:20px"><div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:16px">工作偏好画像</h2><span style="font-size:10px;color:var(--muted)">来自每次登岛后的记录</span></div>
+        <div style="display:grid;gap:16px;margin-top:20px">${S.preferences.map(p=>`<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px"><span style="color:var(--deep)">${p.label}</span><b>${p.score}</b></div><div class="bar"><span style="width:${p.score}%"></span></div></div>`).join('')}</div>
+        <p class="smallnote" style="margin-top:20px;padding-top:12px;border-top:1px solid var(--line)">这是偏好的变化轨迹，不是能力评分。分数低只代表暂时不喜欢。</p>
+      </div>
+      <div style="margin-top:28px"><h2 style="margin:0 0 16px;font-size:16px">跳岛轨迹</h2><div class="timeline">${S.records.map(r=>`<div style="position:relative;padding-bottom:14px"><span class="dot"></span><div class="card" style="padding:16px"><div style="display:flex;align-items:flex-start;gap:12px">${ring(r.glyph,42)}<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b style="font-size:13px">${r.islandName}</b>${pill(meta[r.status][0],meta[r.status][1])}</div><p style="margin:4px 0 0;font-size:10px;color:var(--muted)">${r.date} · ${r.level}</p></div></div><p style="margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:11px;line-height:1.6;color:var(--deep)">“${esc(r.memo)}”</p></div></div>`).join('')}</div></div>
+      <div class="card" style="margin-top:20px;overflow:hidden;border:none;background:linear-gradient(135deg,var(--mistlight),#fff);box-shadow:none"><div style="padding:20px"><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--primary)">${ICON.spark}</span><h2 style="margin:0;font-size:16px">跳岛洞察</h2></div><p style="margin:12px 0 0;font-size:12px;line-height:1.9;color:var(--deep)">${esc(S.insight)}</p><p style="margin:16px 0 0;font-size:10px;color:var(--muted)">由历次体验日记生成 · 仅供参考</p></div></div>
+      <div style="display:grid;gap:12px;margin-top:28px"><button data-action="journal-open" style="padding:14px;border:1px solid var(--line);border-radius:99px;background:#fff;color:var(--deep);font-size:12px;font-weight:600">从一座岛继续探索</button><button data-action="journal-home" style="border:0;background:none;color:var(--muted);font-size:11px">回到首页</button></div>
+      ${footer()}
+    </div>
+  </div>`
+}
+
+function viewUnlock(){
+  const visited=[...new Set(S.records.map(r=>r.islandId))]
+  const pos=[[18,24],[48,16],[78,28],[26,50],[56,46],[84,60],[16,76],[50,78]]
+  const points=pos.map(([x,y])=>`${x},${y}`).join(' ')
+  return `<div class="screen">
+    <div class="hdr" style="padding-bottom:56px">${hdrDeco()}<div class="content">
+      <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.22em;color:rgba(85,128,176,.7)">ISLAND MAP</p>
+      <h1 style="margin:12px 0 0;font-size:27px;letter-spacing:-.6px">跳岛地图</h1>
+      <p style="margin:6px 0 0;font-size:12px;color:rgba(85,128,176,.85)">你登过的每一座岛，都会亮起来。</p>
+      <div class="glass-strong" style="display:inline-block;margin-top:20px;padding:8px 16px;border-radius:99px;font-size:11px;font-weight:700;color:var(--deep)">已解锁 ${visited.length} / ${DATA.islands.length} 座岛</div>
+    </div></div>
+    <div class="pad overlap" style="margin-top:-26px">
+      <div class="card" style="overflow:hidden">
+        <div class="map" style="height:296px">
+          <div class="road" style="left:-10%;top:34%;width:130%;height:12px;transform:rotate(-12deg)"></div>
+          <div class="road" style="left:20%;top:-10%;width:8px;height:130%;transform:rotate(12deg)"></div>
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><polyline points="${points}" fill="none" stroke="#fff" stroke-width=".5" stroke-dasharray="1 2" opacity=".9"/></svg>
+          ${DATA.islands.map((i,idx)=>{
+            const on=visited.includes(i.id)
+            return `<button class="unlock-node ${on?'':'locked'}" data-action="unlock-island" data-id="${i.id}" style="left:${pos[idx][0]}%;top:${pos[idx][1]}%"><span class="orb">${on?i.glyph:'?'}</span><small>${on?i.name:'未解锁'}</small></button>`
+          }).join('')}
+        </div>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:24px"><h2 style="margin:0;font-size:16px">我的岛屿</h2><span style="font-size:10px;color:var(--muted)">点亮过的方向</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        ${DATA.islands.map(i=>{
+          const on=visited.includes(i.id)
+          const rec=S.records.find(r=>r.islandId===i.id)
+          return `<button class="card" data-action="unlock-island" data-id="${i.id}" style="padding:12px;text-align:left;opacity:${on?1:.65}">
+            <div style="display:flex;align-items:center;gap:8px">${ring(i.glyph,36,'',on?'':'opacity:.5')}<div style="min-width:0"><p style="margin:0;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.name}</p><p style="margin:2px 0 0;font-size:9px;color:var(--muted)">${on?'已登岛':'未解锁'}</p></div></div>
+            ${on&&rec?`<p style="margin:8px 0 0;font-size:9px;line-height:1.5;color:var(--deep);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">“${esc(rec.memo)}”</p>`:''}
+          </button>`
+        }).join('')}
+      </div>
+      <p style="margin-top:14px;font-size:10px;line-height:1.7;color:var(--muted);text-align:center">离岛也是一种解锁：排除掉的方向，同样是你走过的岛。</p>
+      ${footer()}
+    </div>
+  </div>`
+}
+
+function toastHtml(){return S.toast?`<div class="toast" id="toastEl"><span class="tick">${ICON.check}</span><span>${esc(S.toast)}</span></div>`:''}
+function navHtml(){
+  if(!['home','map','unlock','journal'].includes(S.screen))return ''
+  const tabs=[['home',ICON.home,'首页'],['map',ICON.map,'地图'],['unlock',ICON.unlock,'跳岛地图'],['journal',ICON.journal,'档案']]
+  return `<nav class="nav"><div class="nav-inner">
+    ${tabs.slice(0,2).map(([id,icon,label])=>`<button class="tab ${S.screen===id?'active':''}" data-action="nav" data-id="${id}" aria-label="${label}" title="${label}">${icon}</button>`).join('')}
+    <button class="plus" data-action="plus" aria-label="快速开始" title="快速开始">${ICON.plus}</button>
+    ${tabs.slice(2).map(([id,icon,label])=>`<button class="tab ${S.screen===id?'active':''}" data-action="nav" data-id="${id}" aria-label="${label}" title="${label}">${icon}</button>`).join('')}
+  </div></nav>`
+}
+function sheetHtml(){
+  if(S.sheet==='location'){
+    const options=['上海 · 静安 · 3km 内','上海 · 徐汇 · 5km 内','北京 · 朝阳 · 3km 内','杭州 · 西湖 · 4km 内']
+    return `<div class="sheet-mask" data-action="close-sheet"></div><div class="sheet"><div class="handle"></div><p style="margin:0 0 4px;font-size:15px;font-weight:700">你在哪里跳岛？</p><p style="margin:0 0 12px;font-size:11px;color:var(--muted)">切换后，附近推荐会跟着更新。</p>
+      ${options.map(o=>`<button class="sheet-item" data-action="choose-location" data-value="${o}"><span><strong>${o}</strong><small>${o===S.location?'当前定位':'切换到这里'}</small></span>${o===S.location?ICON.check:ICON.right}</button>`).join('')}
+      <div style="display:flex;gap:8px;margin-top:12px"><input id="customLocation" class="text" placeholder="或输入自定义地点" style="font-size:13px;font-weight:500;padding:10px 12px;border:1px solid var(--line);border-radius:14px"><button class="btn deep compact" data-action="custom-location" style="width:auto"><span>确定</span><span class="arrow">${ICON.arrow}</span></button></div>
+    </div>`
+  }
+  if(S.sheet==='plus')return `<div class="sheet-mask" data-action="close-sheet"></div><div class="sheet"><div class="handle"></div><p style="margin:0 0 4px;font-size:15px;font-weight:700">现在想做什么？</p>
+    <button class="sheet-item" data-action="sheet-home"><span><strong>再跳一座岛</strong><small>回到首页，看看今天的推荐</small></span>${ICON.right}</button>
+    <button class="sheet-item" data-action="sheet-continue"><span><strong>继续上次体验</strong><small>${S.booking?findIsland(S.booking.islandId).name+' · '+findLevel(S.booking.levelId).name:'还没有进行中的体验'}</small></span>${ICON.right}</button>
+    <button class="sheet-item" data-action="sheet-unlock"><span><strong>跳岛地图</strong><small>看看你点亮了哪些岛</small></span>${ICON.right}</button>
+    <button class="sheet-item" data-action="sheet-journal"><span><strong>看看跳岛日志</strong><small>你走过的每一座岛都记在那里</small></span>${ICON.right}</button>
+  </div>`
+  return ''
+}
+
+function render(){
+  if(timerId&&S.screen!=='experience'){clearInterval(timerId);timerId=null}
+  const views={onboarding:viewOnboarding,home:viewHome,map:viewMap,unlock:viewUnlock,detail:viewDetail,experience:viewExperience,diary:viewDiary,result:viewResult,journal:viewJournal}
+  app.innerHTML=(views[S.screen]||viewHome)()+navHtml()+toastHtml()+sheetHtml()
+  bindDynamic()
+}
+function bindDynamic(){
+  const carousel=document.getElementById('carousel')
+  if(carousel){
+    carousel.scrollLeft=S.carouselIndex*266
+    let last=S.carouselIndex
+    carousel.addEventListener('scroll',()=>{
+      const idx=Math.max(0,Math.min(DATA.islands.length-1,Math.round(carousel.scrollLeft/266)))
+      if(idx===last)return
+      last=idx;S.carouselIndex=idx;S.selectedIslandId=DATA.islands[idx].id
+      document.querySelectorAll('.island-card').forEach((el,n)=>el.classList.toggle('sel-island',n===idx))
+      document.querySelectorAll('#dots button').forEach((el,n)=>el.classList.toggle('on',n===idx))
+    })
+  }
+  if(S.screen==='experience'&&!timerId){
+    timerId=setInterval(()=>{S.elapsed++;const el=document.getElementById('timer');if(el)el.textContent=fmtTime(S.elapsed)},1000)
+  }
+  if(S.screen==='map')applyMapFilter()
+}
+function applyMapFilter(){
+  const q=S.mapQuery.trim()
+  let visible=0
+  document.querySelectorAll('.pin').forEach(el=>{
+    const st=findStore(el.dataset.store), is=findIsland(el.dataset.island)
+    const hit=!q||`${st.name}${is.name}${is.tags.join('')}${st.mentor}`.includes(q)
+    el.classList.toggle('hidden',!hit);if(hit)visible++
+  })
+  document.querySelectorAll('.store-card').forEach(el=>{
+    const st=findStore(el.dataset.store), is=findIsland(st.islandId)
+    const hit=!q||`${st.name}${is.name}${is.tags.join('')}${st.mentor}`.includes(q)
+    el.classList.toggle('hidden',!hit)
+  })
+  const empty=document.getElementById('mapEmpty');if(empty)empty.style.display=visible?'none':'block'
+}
+function showToast(msg){
+  S.toast=msg
+  let el=document.getElementById('toastEl')
+  if(el)el.outerHTML=toastHtml()
+  else app.insertAdjacentHTML('beforeend',toastHtml())
+  clearTimeout(toastTimer)
+  toastTimer=setTimeout(()=>{S.toast='';const node=document.getElementById('toastEl');if(node)node.remove()},2400)
+}
+function navigate(next){if(S.screen!==next)S.stack.push(S.screen);S.screen=next;render()}
+function goBack(){S.screen=S.stack.pop()||'home';render()}
+function finishOnboarding(payload){
+  if(payload){S.interests=payload.interests;S.nickname=payload.nickname||S.profile.nickname}
+  S.profile={...S.profile,interests:S.interests,nickname:S.nickname||S.profile.nickname}
+  showToast('兴趣线索已记下，先跳一座岛试试')
+  navigate('home')
+}
+function submitDiary(){
+  const outcome=deriveOutcome(S.diary)
+  const i=findIsland(S.selectedIslandId), lv=findLevel(S.levelId)
+  const firstFun=DATA.diary.fun.find(x=>x.id===S.diary.fun[0])
+  const firstHard=DATA.diary.hard.find(x=>x.id===S.diary.hard[0])
+  const memo=S.diary.discovery.trim()||(firstFun?`最有意思的是${firstFun[1]}。`:'')||(firstHard?`${firstHard[1]}的过程比想象中难。`:'')||'看过一座岛，留下一句还没想清楚的话。'
+  const now=new Date()
+  const entry={id:'r_'+now.getTime(),date:`${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`,islandId:i.id,islandName:i.name,glyph:i.glyph,level:lv.name,status:outcome==='stay'?'revisit':'excluded',memo}
+  S.flowEntryId=entry.id;S.outcome=outcome;S.preview=null;S.records=[entry,...S.records]
+  const d=S.diary, delta={talk:0,make:0,feedback:0,repeat:0}
+  if(d.fun.includes('f_talk')||d.feelings.some(f=>f.id==='like_talk'&&f.on))delta.talk+=8
+  if(d.hard.includes('h_talk'))delta.talk-=7
+  if(d.fun.includes('f_make')||d.fun.includes('f_finish')||d.feelings.some(f=>f.id==='like_make'&&f.on))delta.make+=8
+  if(d.fun.includes('f_space'))delta.make+=4
+  if(d.fun.includes('f_shoot')||d.fun.includes('f_edit'))delta.feedback+=6
+  if(d.fun.includes('f_finish'))delta.feedback+=5
+  if(d.hard.includes('h_repeat')||d.feelings.some(f=>f.id==='tired_repeat'&&f.on))delta.repeat-=9
+  if(d.hard.includes('h_detail')||d.hard.includes('h_solo'))delta.repeat-=4
+  if(outcome==='stay')delta.feedback+=3
+  S.preferences=S.preferences.map(p=>({...p,score:Math.max(12,Math.min(96,p.score+(delta[p.id]||0)))}))
+  if(d.fun.includes('f_edit')&&d.hard.includes('h_shoot'))S.insight='你并不排斥影像这个方向，只是更在意画面形成的过程：拍摄让你消耗，后期修图让你投入。下一次可以离镜头远一点，试试灯光布景或图片编辑。'
+  else if(outcome==='stay')S.insight=`你在「${i.name}」上给出了正向信号。喜欢不是立刻定下方向的理由，只是多了一条线索：你偏好有明确产出、能看见结果的过程。下一次换一座相似的岛试试。`
+  else S.insight=`「${i.name}」这座岛，你登过了，也决定不留下。排除不是失败——它让你知道，比起重复和独自精细处理，你更在意交流、动手和看得见的反馈。下一次可以挑一座节奏不同的岛。`
+  showToast('体验日记已收进跳岛日志')
+  navigate('result')
+}
+
+app.addEventListener('click',e=>{
+  const el=e.target.closest('[data-action]')
+  if(!el)return
+  const a=el.dataset.action
+  switch(a){
+    case 'onboard-next':S.step=2;render();break
+    case 'onboard-finish':finishOnboarding();break
+    case 'onboard-skip':finishOnboarding({interests:DATA.user.interests.slice(),nickname:DATA.user.nickname});break
+    case 'interest':{
+      const id=el.dataset.id
+      S.interests=S.interests.includes(id)?S.interests.filter(x=>x!==id):[...S.interests,id]
+      const on=S.interests.includes(id)
+      el.style.background=on?'var(--mist)':'#fff';el.style.borderColor=on?'var(--mist)':'var(--line)';el.style.color=on?'var(--deep)':'var(--ink)'
+      const c=document.getElementById('interestCount');if(c)c.textContent=`已选 ${S.interests.length} 个 · 随便选，之后都可以改`
+      break
+    }
+    case 'nav':S.stack=[];S.screen=el.dataset.id;render();break
+    case 'nav-map':S.stack=[];S.screen='map';render();break
+    case 'plus':S.sheet='plus';render();break
+    case 'close-sheet':S.sheet=null;render();break
+    case 'location':S.sheet='location';render();break
+    case 'choose-location':S.location=el.dataset.value;S.sheet=null;render();showToast('定位已更新 · '+S.location);break
+    case 'custom-location':{
+      const v=(document.getElementById('customLocation')||{}).value?.trim()
+      if(v){S.location=v;S.sheet=null;render();showToast('定位已更新 · '+S.location)}
+      break
+    }
+    case 'sheet-home':S.sheet=null;S.stack=[];S.screen='home';render();break
+    case 'sheet-continue':S.sheet=null;S.screen=S.booking?'experience':'detail';render();break
+    case 'sheet-unlock':S.sheet=null;S.stack=[];S.screen='unlock';render();break
+    case 'sheet-journal':S.sheet=null;S.stack=[];S.screen='journal';render();break
+    case 'unlock-island':{
+      const id=el.dataset.id
+      if([...new Set(S.records.map(r=>r.islandId))].includes(id)){S.selectedIslandId=id;S.storeId=null;navigate('detail')}
+      else showToast('这座岛还没登过，先去预约试试')
+      break
+    }
+    case 'pick-island':{
+      S.selectedIslandId=el.dataset.id
+      S.carouselIndex=DATA.islands.findIndex(x=>x.id===S.selectedIslandId)
+      document.querySelectorAll('.island-card').forEach(x=>x.classList.toggle('sel-island',x===el))
+      document.querySelectorAll('#dots button').forEach((x,n)=>x.classList.toggle('on',n===S.carouselIndex))
+      break
+    }
+    case 'dot':{
+      const idx=Number(el.dataset.index), track=document.getElementById('carousel')
+      track.scrollTo({left:idx*266,behavior:'smooth'});S.carouselIndex=idx;S.selectedIslandId=DATA.islands[idx].id
+      document.querySelectorAll('#dots button').forEach((x,n)=>x.classList.toggle('on',n===idx))
+      document.querySelectorAll('.island-card').forEach((x,n)=>x.classList.toggle('sel-island',n===idx))
+      break
+    }
+    case 'open-detail':navigate('detail');break
+    case 'open-detail-id':S.selectedIslandId=el.dataset.id;S.storeId=null;navigate('detail');break
+    case 'open-detail-store':S.selectedIslandId=el.dataset.island;S.storeId=el.dataset.store;navigate('detail');break
+    case 'continue':S.screen=S.booking?'experience':'detail';render();break
+    case 'store':{
+      S.activeStore=el.dataset.store;S.storeId=el.dataset.store;render()
+      const card=document.querySelector('.store-card[data-store="'+S.activeStore+'"]'),track=document.getElementById('storeTrack')
+      if(card&&track)track.scrollTo({left:card.offsetLeft-track.offsetLeft-24,behavior:'smooth'})
+      break
+    }
+    case 'back':goBack();break
+    case 'filter':S.filter=el.dataset.id;render();break
+    case 'custom':{
+      const t=el.dataset.id
+      S.custom=S.custom.includes(t)?S.custom.filter(x=>x!==t):[...S.custom,t];render();break
+    }
+    case 'level':S.levelId=el.dataset.id;render();break
+    case 'scroll-levels':document.getElementById('levels').scrollIntoView({behavior:'smooth',block:'center'});break
+    case 'book':{
+      const i=findIsland(S.selectedIslandId),lv=findLevel(S.levelId)
+      S.booking={islandId:i.id,levelId:lv.id};S.tasksDone=['t1'];S.mood=null;S.elapsed=84*60+16
+      showToast(`预约成功 · ${i.name} ${lv.name}`);navigate('experience');break
+    }
+    case 'task':{
+      const id=el.dataset.id
+      S.tasksDone=S.tasksDone.includes(id)?S.tasksDone.filter(x=>x!==id):[...S.tasksDone,id];render();break
+    }
+    case 'mood':S.mood=el.dataset.id;render();break
+    case 'finish-experience':navigate('diary');break
+    case 'diary-chip':{
+      const g=el.dataset.group,id=el.dataset.id
+      S.diary[g]=S.diary[g].includes(id)?S.diary[g].filter(x=>x!==id):[...S.diary[g],id]
+      el.classList.toggle('on');break
+    }
+    case 'feeling':{
+      const f=S.diary.feelings.find(x=>x.id===el.dataset.id);f.on=!f.on
+      el.querySelector('.sw').classList.toggle('on',f.on);break
+    }
+    case 'diary-submit':submitDiary();break
+    case 'result-preview':S.preview=S.preview?null:(S.outcome==='leave'?'stay':'leave');render();break
+    case 'result-journal':S.stack=[];S.screen='journal';render();break
+    case 'result-home':S.stack=[];S.screen='home';render();break
+    case 'journal-open':S.selectedIslandId=(S.records[0]&&S.records[0].islandId)||'photo';S.storeId=null;navigate('detail');break
+    case 'journal-home':S.stack=[];S.screen='home';render();break
+  }
+})
+
+app.addEventListener('input',e=>{
+  const f=e.target.dataset.field
+  if(f==='nickname')S.nickname=e.target.value
+  if(f==='mapQuery'){S.mapQuery=e.target.value;applyMapFilter()}
+  if(f==='excitement'){
+    S.diary.excitement=Number(e.target.value)
+    e.target.style.setProperty('--p',((S.diary.excitement-1)/9*100)+'%')
+    const v=document.getElementById('exciteVal'),l=document.getElementById('exciteLabel')
+    if(v)v.textContent=S.diary.excitement
+    if(l)l.textContent=['几乎没什么感觉','有一点点好奇','还算平静','有一点投入','比较投入','挺兴奋的','很兴奋','非常兴奋','几乎不想停','完全沉浸'][S.diary.excitement-1]
+  }
+  if(f==='discovery'){S.diary.discovery=e.target.value;const c=document.getElementById('discCount');if(c)c.textContent=e.target.value.length}
+})
+
+render()
+</script>
+</body>
+</html>
