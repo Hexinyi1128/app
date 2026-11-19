@@ -23,10 +23,10 @@ jobs:
 
       - name: Prepare standalone site
         run: |
-          mkdir -p site
+          mkdir -p site/images
           cp island-hop/standalone.html site/index.html
+          cp -r island-hop/images/. site/images/
           touch site/.nojekyll
-          if [ -f island-hop/coffee.jpg ]; then cp island-hop/coffee.jpg site/coffee.jpg; fi
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

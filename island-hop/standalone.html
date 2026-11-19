@@ -114,8 +114,10 @@ button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 
 .scene{position:absolute;inset:0;overflow:hidden}
 .scene svg{width:100%;height:100%;display:block}
-.scene-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.18) 55%,rgba(255,255,255,.72) 100%)}
-.coffee-photo{position:absolute;inset:0;z-index:1;background-image:url('./coffee.jpg');background-size:cover;background-position:center 44%}
+.scene-scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.2) 55%,rgba(255,255,255,.78) 100%)}
+.scene-photo{position:absolute;inset:0;background-size:cover;background-repeat:no-repeat;filter:saturate(.92)}
+.scene-glass{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,rgba(255,255,255,0) 32%,rgba(255,255,255,.24) 72%,rgba(255,255,255,.68) 100%)}
+.scene-glass::before{content:"";position:absolute;inset:0;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);mask-image:radial-gradient(ellipse at 50% 46%,transparent 36%,#000 94%);-webkit-mask-image:radial-gradient(ellipse at 50% 46%,transparent 36%,#000 94%)}
 .scene-card{position:relative;overflow:hidden;background:#DCE7F2}
 .scene-card .ring{background:rgba(255,255,255,.82);backdrop-filter:blur(6px)}
 
@@ -186,7 +188,7 @@ input.text::placeholder{color:var(--mist)}
 .timeline .dot{position:absolute;left:-23px;top:24px;width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:var(--primary);box-shadow:0 1px 4px rgba(42,45,51,.2)}
 .sel-island::after{content:"";position:absolute;inset:0;z-index:5;border-radius:inherit;box-shadow:inset 0 0 0 2px var(--deep);pointer-events:none}
 .island-card{position:relative;display:flex;flex-direction:column;justify-content:space-between;width:252px;height:282px;flex:none;padding:16px 16px 14px;border:0;border-radius:20px;text-align:left;overflow:hidden;color:var(--ink);transition:outline .15s,box-shadow .15s}
-.island-card .scene-scrim{background:linear-gradient(180deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.12) 42%,rgba(255,255,255,.88) 100%)}
+.island-card .scene-scrim{background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.08) 38%,rgba(255,255,255,.9) 100%)}
 .card-top,.card-bottom{position:relative;z-index:2}
 .card-top{display:flex;align-items:flex-start;justify-content:space-between}
 .card-bottom{margin-top:auto}
@@ -267,7 +269,7 @@ const DATA = {
   interests:[
     ['coffee','咖啡','咖'],['photo','摄影','摄'],['design','设计','设'],['florist','花艺','花'],
     ['baker','烘焙','焙'],['pet','宠物','宠'],['writing','写作','写'],['music','音乐','音'],
-    ['craft','手作','手'],['garden','园艺','园'],['video','短视频','影'],['community','社群','群']
+    ['craft','手作','手'],['garden','园艺','园'],['video','化妆','妆'],['community','社群','群']
   ],
   levels:[
     {id:'taste',name:'初步接触',duration:'30 分钟',price:39,desc:'职业观察与交流',hint:'先看看这座岛长什么样'},
@@ -280,9 +282,9 @@ const DATA = {
     {id:'design',name:'平面设计师',en:'GRAPHIC DESIGNER',glyph:'设',g:['#8FAFD2','#BBD0E6'],price:159,duration:'2 小时',distance:'2.4km',spots:2,rating:4.9,explorers:764,hot:'作品可带走',summary:'拿到一份真实需求，和设计师一起把想法排成版面。',tags:['后期修图','空间布置','细节要求高']},
     {id:'florist',name:'花艺师',en:'FLORIST',glyph:'花',g:['#A7BEDC','#D6E3F0'],price:99,duration:'2 小时',distance:'1.6km',spots:5,rating:4.8,explorers:1102,hot:'适合周末',summary:'为一束花做配色和造型，做完可以带回家。',tags:['动手创造','空间布置','与人交流']},
     {id:'baker',name:'烘焙师',en:'BAKER',glyph:'焙',g:['#9DB8D8','#CFDFEC'],price:99,duration:'半天',distance:'2.8km',spots:2,rating:4.7,explorers:688,hot:'半天限定',summary:'从称量到出炉，跟着烘焙师完成一条完整生产线。',tags:['动手创造','重复性动作','即时反馈']},
-    {id:'video',name:'短视频策划',en:'VIDEO CREATOR',glyph:'影',g:['#94B2D4','#C4D8EA'],price:159,duration:'2 小时',distance:'3.0km',spots:3,rating:4.8,explorers:853,hot:'团队协作',summary:'从选题到分镜，参与一条短视频诞生前的两小时。',tags:['拍摄过程','主动开口','团队协作']},
+    {id:'video',name:'化妆师',en:'MAKEUP ARTIST',glyph:'妆',g:['#D9C4D6','#EDE0EA'],price:159,duration:'2 小时',distance:'3.0km',spots:3,rating:4.8,explorers:853,hot:'色彩搭配',summary:'跟着化妆师完成一次日常妆容，认识色彩、工具与光线。',tags:['动手创造','细节要求高','即时反馈']},
     {id:'light',name:'灯光布景师',en:'LIGHT & SET',glyph:'光',g:['#A3BAD9','#D2E0EE'],price:159,duration:'2 小时',distance:'2.6km',spots:3,rating:4.9,explorers:412,hot:'小众方向',summary:'不站在镜头前，也能决定一个画面怎么被看见。',tags:['空间布置','动手创造','后期配合']},
-    {id:'retouch',name:'图片编辑',en:'IMAGE EDITOR',glyph:'修',g:['#96B4D6','#C9DBEC'],price:139,duration:'2 小时',distance:'2.1km',spots:4,rating:4.8,explorers:526,hot:'安静的工作',summary:'在一次修图里，练习怎么把照片变成想说的那句话。',tags:['后期修图','细节要求高','独自判断']}
+    {id:'retouch',name:'宠物美容',en:'PET GROOMER',glyph:'宠',g:['#C6D8C6','#E2ECE0'],price:139,duration:'2 小时',distance:'2.1km',spots:4,rating:4.8,explorers:526,hot:'毛孩子友好',summary:'给宠物做一次基础护理，学习怎么和它们耐心相处。',tags:['动手创造','细节要求高','耐心陪伴']}
   ],
   stores:[
     {id:'s_coffee',islandId:'coffee',name:'雾屿咖啡 · 静安店',distance:'1.2km',duration:'2 小时',spots:3,rating:4.9,price:99,x:27,y:31,mentor:'阿澄',credential:'8 年精品咖啡 · 手冲赛事评审'},
@@ -312,7 +314,7 @@ const DATA = {
       {id:'r1',date:'09.06',islandId:'design',islandName:'平面设计师',glyph:'设',level:'轻度体验',status:'revisit',memo:'排版比想象中更像解题，喜欢最后对齐的那一刻。'},
       {id:'r2',date:'09.28',islandId:'coffee',islandName:'咖啡师',glyph:'咖',level:'初步接触',status:'excluded',memo:'出杯节奏很治愈，但重复动作多到让我放空。'},
       {id:'r3',date:'10.14',islandId:'florist',islandName:'花艺师',glyph:'花',level:'轻度体验',status:'revisit',memo:'配色的时候完全忘了时间，想再做一次。'},
-      {id:'r4',date:'11.02',islandId:'video',islandName:'短视频策划',glyph:'影',level:'初步接触',status:'watching',memo:'开会很有意思，拍摄那一段我更想退后一步。'}
+      {id:'r4',date:'11.02',islandId:'video',islandName:'化妆师',glyph:'妆',level:'初步接触',status:'watching',memo:'配色和工具都很有意思，真正上手时我更想慢一点。'}
     ],
     preferences:[{id:'talk',label:'与人交流',score:82},{id:'make',label:'动手创造',score:74},{id:'feedback',label:'即时反馈',score:71},{id:'repeat',label:'重复性动作',score:26}],
     insight:'你在「与人交流」和「动手创造」里最放松；重复的、需要长时间独自精细处理的环节会让你消耗。下一座岛，可以仍然需要动手，但试着离镜头远一点。'
@@ -329,12 +331,12 @@ const DATA = {
     },
     base:{coffee:2,photo:2,design:2,florist:2,baker:1,video:1,light:1,retouch:1},
     notes:{
-      retouch:'不站在镜头前，也能决定照片最后的样子。',
+      retouch:'和毛孩子耐心相处，护理的过程比想象中治愈。',
       light:'你提到喜欢布置和动手，布景是安静但可见的那一部分。',
       design:'把想法整理成看得见的版面，节奏由你掌握。',
       florist:'既有动手的部分，也有可以交流的部分。',
       baker:'从称量到出炉，每一步都有明确的反馈。',
-      video:'更靠近策划和现场协作，决策空间大一些。',
+      video:'从色彩到妆面，每次调整都能立刻看见变化。',
       photo:'如果你还想再试试镜头，这次由你决定怎么拍。',
       coffee:'近距离和人打交道，节奏快，重复也多。'
     }
@@ -485,7 +487,7 @@ function updateMiniHeader(){
 function viewSearch(){
   const q=S.searchQuery.trim()
   const list=getHomeIslands()
-  const hot=['摄影','咖啡','设计','花艺','烘焙','短视频','宠物','写作','手作','音乐']
+  const hot=['摄影','咖啡','设计','花艺','烘焙','化妆','宠物美容','灯光','写作','手作']
   return `<div class="screen">
     <div class="srch-head">
       <button class="srch-back" data-action="back" aria-label="返回">${ICON.back}</button>
@@ -508,7 +510,14 @@ function viewSearch(){
   </div>`
 }
 
+const PHOTOS={
+  coffee:['coffee.jpg','center 58%'],photo:['photo.jpg','center 48%'],florist:['florist.jpg','center 32%'],
+  baker:['baker.jpg','center 62%'],design:['design.jpg','center 38%'],light:['light.jpg','center 50%'],
+  video:['makeup.jpg','center 45%'],retouch:['petgroom.jpg','center 38%']
+}
 function sceneArt(id){
+  const photo=PHOTOS[id]
+  if(photo)return `<div class="scene"><div class="scene-photo" style="background-image:url('./images/${photo[0]}');background-position:${photo[1]}"></div><div class="scene-glass"></div></div><div class="scene-scrim"></div>`
   const palettes={
     photo:['#DCE7F2','#AFC6DE'],coffee:['#EADFD2','#CBB7A0'],design:['#E4E2EF','#C3C1DC'],
     florist:['#E5EDDC','#BFD2B2'],baker:['#F1E5D3','#DCC3A1'],video:['#DDE4F0','#B8C5DD'],
