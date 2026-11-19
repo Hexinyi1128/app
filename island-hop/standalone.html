@@ -163,7 +163,7 @@ button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 .island-pin .orb{display:grid;place-items:center;width:42px;height:42px;border:2px solid rgba(255,255,255,.95);border-radius:50%;background:rgba(255,255,255,.86);box-shadow:0 8px 16px rgba(42,45,51,.16);font-size:15px;font-weight:800}
 .island-pin .nm{font-size:10px;font-weight:700;white-space:nowrap;text-shadow:0 1px 2px #fff}
 .island-pin.locked{opacity:.55;filter:grayscale(.5)}
-.map-dark{position:relative;height:360px;overflow:hidden;background:linear-gradient(155deg,#D8E7F4,#EAF2F8)}
+.map-dark{position:relative;height:440px;overflow:hidden;background:linear-gradient(155deg,#D8E7F4,#EAF2F8)}
 .map-dark::before{content:"";position:absolute;inset:-20%;background-image:linear-gradient(rgba(85,128,176,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(85,128,176,.07) 1px,transparent 1px);background-size:38px 38px;transform:rotate(-9deg)}
 .map-canvas{position:absolute;inset:-18%;width:136%;height:136%;touch-action:none;will-change:transform;transform-origin:center center}
 .map-road{position:absolute;border-radius:99px;background:rgba(255,255,255,.82)}
@@ -180,11 +180,15 @@ button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 #unlockHead.collapsed{max-height:0;padding-top:0;padding-bottom:0;margin-top:0;opacity:0;pointer-events:none}
 .photo-pin{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;border:0;background:none}
 .photo-ring{display:block;width:52px;height:52px;padding:3px;border-radius:50%;background:#fff;box-shadow:0 8px 18px rgba(85,128,176,.22)}
-.photo-ring img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.photo-ring img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%;filter:saturate(.62) brightness(1.12) contrast(.92)}
 .photo-tag{padding:3px 9px;border-radius:8px;background:#fff;color:var(--ink);font-size:10px;font-weight:800;white-space:nowrap;box-shadow:0 4px 10px rgba(85,128,176,.18);transform:rotate(-3deg)}
 .photo-pin.active .photo-ring{padding:3px;background:var(--primary)}
 .photo-pin.active .photo-tag{background:var(--primary);color:#fff}
-.photo-dot{position:absolute;width:30px;height:30px;border:2px solid rgba(255,255,255,.94);border-radius:50%;background-size:cover;background-position:center;box-shadow:0 4px 10px rgba(85,128,176,.22)}
+.photo-dot{position:absolute;width:30px;height:30px;border:2px solid rgba(255,255,255,.94);border-radius:50%;background-size:cover;background-position:center;box-shadow:0 4px 10px rgba(85,128,176,.22);filter:saturate(.62) brightness(1.1)}
+.stores-section{max-height:1400px;overflow:hidden;padding-top:20px;opacity:1;transition:max-height .35s ease,padding .3s ease,opacity .25s ease}
+.stores-section.collapsed{max-height:70px;padding-top:0;opacity:1;pointer-events:auto}
+.stores-peek{display:none;width:100%;padding:12px;border:0;border-radius:14px;background:var(--mistlight);color:var(--deep);font-size:11px;font-weight:700}
+.stores-section.collapsed .stores-peek{display:block}
 
 .slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;background:linear-gradient(90deg,var(--primary) var(--p,50%),var(--line) var(--p,50%));outline:none}
 .slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border:5px solid var(--deep);border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(42,45,51,.18)}
@@ -387,7 +391,7 @@ const S = {
   mapQuery:'',activeStore:'s_coffee',carouselIndex:0,sheet:null,toast:'',
   searchQuery:'',homeList:DATA.islands.map(x=>x.id),
   bookings:[],bookingDate:{year:2026,month:11,day:19},activeBookingId:null,loggedIn:true,
-  mapPan:{x:0,y:0},mapZoom:1,mapHeadCollapsed:false
+  mapPan:{x:0,y:0},mapZoom:1,mapHeadCollapsed:false,storesHidden:false
 }
 const app = document.getElementById('app')
 let toastTimer=null, timerId=null
@@ -508,6 +512,10 @@ function sectionMiniHtml(){
   if(S.screen==='map')return `<button id="mapHeadMini" class="section-mini" data-action="expand-section"><span style="display:grid;place-items:center;flex:none;color:var(--deep)">${ICON.pin}</span><span class="t">附近的岛</span><span class="s">${esc(S.location)}</span><span style="color:var(--muted)">${ICON.chev}</span></button>`
   if(S.screen==='unlock')return `<button id="unlockHeadMini" class="section-mini" data-action="expand-section"><span style="display:grid;place-items:center;flex:none;color:var(--deep)">${ICON.compass}</span><span class="t">跳岛地图</span><span class="s">已解锁 ${[...new Set(S.records.map(r=>r.islandId))].length} / ${DATA.islands.length}</span><span style="color:var(--muted)">${ICON.chev}</span></button>`
   return ''
+}
+function updateStoresSection(){
+  const el=document.getElementById('storesSection')
+  if(el)el.classList.toggle('collapsed',S.storesHidden)
 }
 function applyMapTransform(){
   const c=document.getElementById('mapCanvas')
@@ -730,7 +738,8 @@ function viewMap(){
       </div>
       <div style="position:absolute;left:16px;bottom:12px;padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.88);font-size:10px;color:var(--deep);backdrop-filter:blur(8px)">已定位 · ${esc(S.location)}</div>
     </div>
-    <div class="pad" style="padding-top:20px">
+    <div class="pad stores-section" id="storesSection">
+      <button class="stores-peek" data-action="show-stores">向下查看附近 ${DATA.stores.length} 座岛 ↓</button>
       <div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:16px">附近 ${DATA.stores.length} 座岛</h2><span style="font-size:11px;color:var(--muted)">按距离排序</span></div>
       <div id="storeTrack" class="hide-scroll" style="display:flex;gap:12px;overflow-x:auto;margin:12px -4px 0;padding:0 4px 8px">
         ${DATA.stores.map(st=>{
@@ -1086,6 +1095,7 @@ function render(){
   bindDynamic()
   updateMiniHeader()
   updateSectionHead()
+  updateStoresSection()
 }
 function bindDynamic(){
   const carousel=document.getElementById('carousel')
@@ -1249,8 +1259,9 @@ app.addEventListener('click',e=>{
     case 'open-detail-id':S.selectedIslandId=el.dataset.id;S.storeId=null;navigate('detail');break
     case 'open-detail-store':S.selectedIslandId=el.dataset.island;S.storeId=el.dataset.store;navigate('detail');break
     case 'continue':navigate('bookings');break
+    case 'show-stores':S.storesHidden=false;updateStoresSection();break
     case 'store':{
-      S.activeStore=el.dataset.store;S.storeId=el.dataset.store;render()
+      S.activeStore=el.dataset.store;S.storeId=el.dataset.store;S.storesHidden=false;render()
       const card=document.querySelector('.store-card[data-store="'+S.activeStore+'"]'),track=document.getElementById('storeTrack')
       if(card&&track)track.scrollTo({left:card.offsetLeft-track.offsetLeft-24,behavior:'smooth'})
       break
@@ -1341,6 +1352,7 @@ app.addEventListener('pointerdown',e=>{
   if(!e.target.closest('.map-canvas'))return
   if(e.pointerType==='mouse'&&e.button!==0)return
   S.mapHeadCollapsed=true;updateSectionHead()
+  S.storesHidden=true;updateStoresSection()
   mapDrag={id:e.pointerId,x:e.clientX,y:e.clientY,ox:S.mapPan.x,oy:S.mapPan.y}
 })
 app.addEventListener('pointermove',e=>{
@@ -1360,7 +1372,10 @@ app.addEventListener('wheel',e=>{
   applyMapTransform()
 },{passive:false})
 
-window.addEventListener('scroll',()=>{updateMiniHeader();updateSectionHead()},{passive:true})
+window.addEventListener('scroll',()=>{
+  updateMiniHeader();updateSectionHead()
+  if(window.scrollY>70&&S.storesHidden){S.storesHidden=false;updateStoresSection()}
+},{passive:true})
 render()
 </script>
 </body>
