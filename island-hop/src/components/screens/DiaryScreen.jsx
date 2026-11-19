@@ -6,7 +6,7 @@ import GradientHeader from '../ui/GradientHeader.jsx'
 import Toggle from '../ui/Toggle.jsx'
 import BackBar from '../ui/BackBar.jsx'
 
-const兴奋描述 = ['几乎没什么感觉', '有一点点好奇', '还算平静', '有一点投入', '比较投入', '挺兴奋的', '很兴奋', '非常兴奋', '几乎不想停', '完全沉浸']
+const EXCITEMENT_LABELS = ['几乎没什么感觉', '有一点点好奇', '还算平静', '有一点投入', '比较投入', '挺兴奋的', '很兴奋', '非常兴奋', '几乎不想停', '完全沉浸']
 
 export default function DiaryScreen({ island, initialDiary, onSubmit, onBack }) {
   const [diary, setDiary] = useState(initialDiary)
@@ -97,7 +97,7 @@ export default function DiaryScreen({ island, initialDiary, onSubmit, onBack }) 
           />
           <div className="mt-3 flex justify-between text-[10px] text-muted">
             <span>平静</span>
-            <span className="text-primary">{兴奋描述[diary.excitement - 1]}</span>
+            <span className="text-primary">{EXCITEMENT_LABELS[diary.excitement - 1]}</span>
             <span>兴奋</span>
           </div>
         </Card>
