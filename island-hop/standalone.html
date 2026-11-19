@@ -14,7 +14,8 @@
 html,body{min-height:100%}
 body{margin:0;background:#E8EDF2;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit}
-button{cursor:pointer}
+button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
+::selection{background:rgba(110,150,194,.28);color:inherit}
 #app{position:relative;width:100%;max-width:375px;min-height:100vh;min-height:100dvh;margin:0 auto;overflow:hidden;background:var(--page)}
 @media(min-width:640px){#app{margin:20px auto;min-height:calc(100dvh - 40px);border-radius:30px;box-shadow:0 24px 60px rgba(42,45,51,.16)}}
 .screen{min-height:100%;padding-bottom:100px}
@@ -41,6 +42,28 @@ button{cursor:pointer}
 .hdr .deco{position:absolute;inset:0;pointer-events:none}
 .hdr .deco i{position:absolute;display:block;border-radius:999px;background:rgba(255,255,255,.34);border:1px solid rgba(255,255,255,.58)}
 .hdr .content{position:relative;z-index:2}
+
+.hdr.home-header{margin:12px 12px 0;padding:24px 18px 30px;border:1px solid rgba(255,255,255,.55);border-radius:24px;background:linear-gradient(150deg,#9FB9D8,#BDD2E8)}
+.home-overlap{margin-left:12px;margin-right:12px}
+.hdr-eyebrow{margin:0;font-size:10px;font-weight:700;letter-spacing:.24em;color:var(--deep)}
+.hdr-greeting{margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--deep)}
+.hdr-title{margin:16px 0 0;font-size:28px;line-height:1.25;letter-spacing:-.6px;color:var(--ink)}
+.hdr-desc{margin:8px 0 0;font-size:12px;line-height:1.6;color:var(--deep)}
+.hdr-search{display:flex;align-items:center;gap:8px;height:42px;margin-top:18px;padding:0 10px 0 12px;border:1px solid rgba(255,255,255,.9);border-radius:999px;background:rgba(255,255,255,.72);color:var(--deep)}
+.hdr-search input{flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:12px;color:var(--ink)}
+.hdr-search input::placeholder{color:rgba(85,128,176,.72)}
+.hdr-search-clear{display:grid;place-items:center;width:24px;height:24px;flex:none;border:0;border-radius:50%;background:rgba(85,128,176,.14);color:var(--deep);font-size:15px;line-height:1}
+.hdr-search-note{margin:8px 0 0;font-size:10px;line-height:1.4;color:var(--deep);opacity:.85}
+.header-mini{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;z-index:39;display:flex;align-items:center;gap:10px;width:min(calc(100% - 24px),351px);padding:8px 10px;border:1px solid rgba(255,255,255,.7);border-radius:22px;background:linear-gradient(150deg,#9FB9D8,#BDD2E8);box-shadow:0 12px 30px rgba(85,128,176,.3);opacity:0;pointer-events:none;transform:translate(-50%,-150%);transition:transform .28s ease,opacity .28s ease}
+.header-mini.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.mini-round{display:grid;place-items:center;width:36px;height:36px;flex:none;border:1px solid rgba(255,255,255,.75);border-radius:50%;background:rgba(255,255,255,.55);color:var(--deep)}
+.mini-main{flex:1;min-width:0;padding:0 2px;border:0;background:none;text-align:left;color:var(--ink)}
+.mini-title{display:block;font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-sub{display:block;margin-top:2px;font-size:9px;line-height:1.2;color:var(--deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reco-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.reco-eyebrow{margin:0;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--deep)}
+.reco-title{margin:4px 0 0;font-size:17px;font-weight:700;line-height:1.3;color:var(--ink)}
+.reco-more{flex:none;padding:6px 0;border:0;background:none;color:var(--muted);font-size:11px}
 
 .card{background:#fff;border-radius:22px;box-shadow:0 10px 30px rgba(85,128,176,.08)}
 .card.click{cursor:pointer;transition:transform .15s}
@@ -155,7 +178,12 @@ input.text::placeholder{color:var(--mist)}
 .timeline::before{content:"";position:absolute;left:7px;top:12px;bottom:12px;width:1px;background:var(--line)}
 .timeline .dot{position:absolute;left:-23px;top:24px;width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:var(--primary);box-shadow:0 1px 4px rgba(42,45,51,.2)}
 .sel-island::after{content:"";position:absolute;inset:0;z-index:5;border-radius:inherit;box-shadow:inset 0 0 0 2px var(--deep);pointer-events:none}
-.island-card{position:relative;display:block;width:252px;height:282px;flex:none;padding:20px;border:0;border-radius:20px;text-align:left;overflow:hidden;transition:outline .15s}
+.island-card{position:relative;display:block;width:252px;height:282px;flex:none;padding:16px 16px 14px;border:0;border-radius:20px;text-align:left;overflow:hidden;color:var(--ink);transition:outline .15s,box-shadow .15s}
+.card-en{margin:0;font-size:9px;font-weight:700;letter-spacing:.16em;line-height:1.3;color:var(--deep)}
+.card-name{margin:4px 0 0;font-size:20px;font-weight:700;line-height:1.25;letter-spacing:-.4px;color:var(--ink)}
+.card-meta{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;line-height:1.4;color:var(--deep)}
+.card-price{font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap}
+.reco-empty{display:grid;place-items:center;width:100%;height:180px;border:1px dashed var(--mist);border-radius:18px;background:rgba(255,255,255,.6);font-size:12px;line-height:1.6;color:var(--muted);text-align:center;padding:0 20px}
 .dots{display:flex;justify-content:center;gap:6px}
 .dots button{height:6px;width:6px;padding:0;border:0;border-radius:99px;background:var(--mist)}
 .dots button.on{width:20px;background:var(--deep)}
@@ -295,7 +323,8 @@ const S = {
   diary:{fun:['f_edit'],hard:['h_shoot'],excitement:5,feelings:DATA.diary.feelings.map(x=>({...x})),discovery:''},
   outcome:'leave',preview:null,flowEntryId:null,
   records:DATA.seed.records.map(x=>({...x})),preferences:DATA.seed.preferences.map(x=>({...x})),insight:DATA.seed.insight,
-  mapQuery:'',activeStore:'s_coffee',carouselIndex:0,sheet:null,toast:''
+  mapQuery:'',activeStore:'s_coffee',carouselIndex:0,sheet:null,toast:'',
+  searchQuery:'',homeList:DATA.islands.map(x=>x.id)
 }
 const app = document.getElementById('app')
 let toastTimer=null, timerId=null
@@ -351,6 +380,47 @@ function btn(text,action,variant='dark',extra=''){return `<button class="btn ${v
 function hdrDeco(){return `<div class="deco"><i style="right:-48px;top:-56px;width:176px;height:176px"></i><i style="right:44px;top:96px;width:112px;height:40px"></i><i style="left:-56px;bottom:8px;width:112px;height:112px"></i><i style="left:96px;top:-32px;width:56px;height:56px"></i></div>`}
 function backBar(right=''){return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><button data-action="back" style="display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:50%;background:#fff;color:var(--ink);box-shadow:0 10px 30px rgba(85,128,176,.08)">${ICON.back}</button><span style="font-size:13px;font-weight:700"></span><div style="min-width:36px;display:flex;justify-content:flex-end">${right}</div></div>`}
 function footer(){return `<p style="margin:32px 0 8px;text-align:center;font-size:10px;color:var(--muted)">下一座岛，随时可以跳 · 不着急给人生下结论</p>`}
+
+function getHomeIslands(){
+  const q=(S.searchQuery||'').trim().toLowerCase()
+  const list=q?DATA.islands.filter(i=>[i.name,i.en,i.glyph,i.hot,i.summary,...i.tags].join(' ').toLowerCase().includes(q)):DATA.islands
+  S.homeList=list.map(x=>x.id)
+  return list
+}
+function carouselHtml(list){
+  if(!list.length)return '<div class="reco-empty">没有找到相关方向，换个关键词试试。</div>'
+  return `<div id="carousel" class="hide-scroll" style="display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;margin:0 -4px">
+    ${list.map(i=>`<button class="island-card scene-card ${i.id===S.selectedIslandId?'sel-island':''}" data-action="pick-island" data-id="${i.id}" style="scroll-snap-align:start">
+      ${sceneArt(i.id)}
+      <div style="position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between"><span class="pill glasspill" style="color:var(--deep)">${i.hot}</span><span class="glass-strong" style="display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--deep)">${ICON.arrow}</span></div>
+      <div style="position:relative;z-index:2;margin-top:12px"><p class="card-en">${i.en}</p><h3 class="card-name">${i.name}</h3></div>
+      <div class="card-meta" style="position:relative;z-index:2"><span>${i.duration} · ${i.distance}</span><span class="card-price">¥${i.price} 起</span></div>
+    </button>`).join('')}
+  </div>
+  <div id="dots" class="dots" style="margin-top:12px">${list.map((i,idx)=>`<button data-action="dot" data-index="${idx}" class="${i.id===S.selectedIslandId?'on':''}"></button>`).join('')}</div>`
+}
+function applyHomeSearch(){
+  const list=getHomeIslands()
+  const host=document.getElementById('recoCarouselHost')
+  if(host)host.innerHTML=carouselHtml(list)
+  const note=document.getElementById('homeSearchNote')
+  if(note)note.textContent=S.searchQuery.trim()?`找到 ${list.length} 个相关方向`:'试试：摄影 / 咖啡 / 设计 / 花艺'
+  const clear=document.getElementById('homeSearchClear')
+  if(clear)clear.classList.toggle('hidden',!S.searchQuery)
+  if(S.carouselIndex>=list.length)S.carouselIndex=0
+}
+function miniHeaderHtml(){
+  if(S.screen!=='home')return ''
+  return `<div id="headerMini" class="header-mini">
+    <button class="mini-round" data-action="header-search" aria-label="搜索方向与职业">${ICON.search}</button>
+    <button class="mini-main" data-action="header-expand"><span class="mini-title">下一座岛，哪座？</span><span class="mini-sub">点击展开 · 搜索方向与职业</span></button>
+    <button class="mini-round" data-action="header-location" aria-label="修改定位">${ICON.pin}</button>
+  </div>`
+}
+function updateMiniHeader(){
+  const mini=document.getElementById('headerMini')
+  if(mini)mini.classList.toggle('show',S.screen==='home'&&window.scrollY>110)
+}
 
 function sceneArt(id){
   const palettes={
@@ -410,33 +480,29 @@ function viewOnboarding(){
 }
 
 function viewHome(){
-  const active=findIsland(S.selectedIslandId)||DATA.islands[0]
+  const homeList=getHomeIslands()
   return `<div class="screen">
-    <div class="hdr" style="padding-bottom:76px">${hdrDeco()}<div class="content">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between">
-        <div><p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.26em;color:rgba(85,128,176,.7)">ISLAND HOP / 跳岛</p><p style="margin:16px 0 0;font-size:12px;color:rgba(85,128,176,.85)">嗨，${esc(S.profile.nickname)} · 探索第 ${S.profile.islandDays} 天</p></div>
+    <div class="hdr home-header" id="homeHeader" style="padding-bottom:76px">${hdrDeco()}<div class="content">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div><p class="hdr-eyebrow">ISLAND HOP / 跳岛</p><p class="hdr-greeting">嗨，${esc(S.profile.nickname)} · 探索第 ${S.profile.islandDays} 天</p></div>
         <button class="pill glasspill" data-action="location" title="修改定位">${ICON.pin} ${esc(S.location.split(' · ').slice(0,2).join(' · '))} ${ICON.chev}</button>
       </div>
-      <h1 style="margin:20px 0 0;font-size:30px;line-height:1.2;letter-spacing:-.8px">下一座岛，哪座？</h1>
-      <p style="margin:8px 0 0;max-width:220px;font-size:12px;line-height:1.6;color:rgba(85,128,176,.85)">与其想几个月，不如先跳一座岛。</p>
-      ${ring('岛',88,'glass','position:absolute;right:28px;top:96px;opacity:.8;z-index:3')}
+      <h1 class="hdr-title">下一座岛，哪座？</h1>
+      <p class="hdr-desc">与其想几个月，不如先跳一座岛。</p>
+      <div class="hdr-search">
+        <span style="display:grid;place-items:center;flex:none;color:var(--deep)">${ICON.search}</span>
+        <input id="homeSearch" data-field="homeSearch" value="${esc(S.searchQuery)}" placeholder="搜索感兴趣的方向 / 职业" autocomplete="off">
+        <button id="homeSearchClear" class="hdr-search-clear hidden" data-action="clear-home-search" aria-label="清空搜索">×</button>
+      </div>
+      <p id="homeSearchNote" class="hdr-search-note">${S.searchQuery.trim()?`找到 ${homeList.length} 个相关方向`:'试试：摄影 / 咖啡 / 设计 / 花艺'}</p>
     </div></div>
-    <div class="pad overlap" style="margin-top:-36px">
+    <div class="pad overlap home-overlap" style="margin-top:-36px">
       <div class="card" style="padding:20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--primary)">FOR YOU</p><h2 style="margin:4px 0 0;font-size:17px">为你推荐</h2></div>
-          <button data-action="nav-map" style="border:0;background:none;color:var(--muted);font-size:11px">看看附近 ›</button>
+        <div class="reco-head">
+          <div><p class="reco-eyebrow">FOR YOU</p><h2 class="reco-title">为你推荐</h2></div>
+          <button class="reco-more" data-action="nav-map">看看附近 ›</button>
         </div>
-        <div id="carousel" class="hide-scroll" style="display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;margin:0 -4px">
-          ${DATA.islands.map(i=>`<button class="island-card scene-card ${i.id===active.id?'sel-island':''}" data-action="pick-island" data-id="${i.id}" style="scroll-snap-align:start">
-            ${sceneArt(i.id)}
-            <div style="position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between"><span class="pill glasspill" style="color:var(--deep)">${i.hot}</span><span class="glass-strong" style="display:grid;place-items:center;width:32px;height:32px;border-radius:50%;color:var(--deep)">${ICON.arrow}</span></div>
-            ${i.id==='coffee'?'<div style="height:18px"></div>':`<div style="position:relative;z-index:2;margin-top:18px;display:flex;justify-content:center">${ring(i.glyph,100)}</div>`}
-            <div style="position:relative;z-index:2;margin-top:16px"><p style="margin:0;font-size:9px;font-weight:700;letter-spacing:.18em;color:rgba(85,128,176,.8)">${i.en}</p><h3 style="margin:2px 0 0;font-size:21px;letter-spacing:-.4px">${i.name}</h3></div>
-            <div style="position:relative;z-index:2;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.6);display:flex;justify-content:space-between;font-size:11px;color:var(--deep)"><span>${i.duration} · ${i.distance}</span><b>¥${i.price} 起</b></div>
-          </button>`).join('')}
-        </div>
-        <div id="dots" class="dots" style="margin-top:12px">${DATA.islands.map((i,idx)=>`<button data-action="dot" data-index="${idx}" class="${idx===S.carouselIndex?'on':''}"></button>`).join('')}</div>
+        <div id="recoCarouselHost">${carouselHtml(homeList)}</div>
         <div style="margin-top:20px">
           ${btn('预约这次体验','open-detail','deep')}
           <p id="homeHint" style="margin:12px 0 0;text-align:center;font-size:11px;color:var(--muted)">${S.booking?'有一次体验正在进行，随时可以继续。':'先看看，再决定要不要留下。'}</p>
@@ -740,11 +806,14 @@ function sheetHtml(){
   return ''
 }
 
+let lastRenderedScreen=null
 function render(){
   if(timerId&&S.screen!=='experience'){clearInterval(timerId);timerId=null}
+  if(lastRenderedScreen!==S.screen){window.scrollTo(0,0);lastRenderedScreen=S.screen}
   const views={onboarding:viewOnboarding,home:viewHome,map:viewMap,unlock:viewUnlock,detail:viewDetail,experience:viewExperience,diary:viewDiary,result:viewResult,journal:viewJournal}
-  app.innerHTML=(views[S.screen]||viewHome)()+navHtml()+toastHtml()+sheetHtml()
+  app.innerHTML=(views[S.screen]||viewHome)()+navHtml()+toastHtml()+sheetHtml()+miniHeaderHtml()
   bindDynamic()
+  updateMiniHeader()
 }
 function bindDynamic(){
   const carousel=document.getElementById('carousel')
@@ -840,6 +909,10 @@ app.addEventListener('click',e=>{
     }
     case 'nav':S.stack=[];S.screen=el.dataset.id;render();break
     case 'nav-map':S.stack=[];S.screen='map';render();break
+    case 'header-expand':window.scrollTo({top:0,behavior:'smooth'});break
+    case 'header-search':window.scrollTo({top:0,behavior:'smooth'});setTimeout(()=>{const el2=document.getElementById('homeSearch');if(el2)el2.focus()},360);break
+    case 'header-location':window.scrollTo({top:0,behavior:'smooth'});S.sheet='location';render();break
+    case 'clear-home-search':{S.searchQuery='';applyHomeSearch();const input=document.getElementById('homeSearch');if(input){input.value='';input.focus()}break}
     case 'plus':S.sheet='plus';render();break
     case 'close-sheet':S.sheet=null;render();break
     case 'location':S.sheet='location';render();break
@@ -861,14 +934,16 @@ app.addEventListener('click',e=>{
     }
     case 'pick-island':{
       S.selectedIslandId=el.dataset.id
-      S.carouselIndex=DATA.islands.findIndex(x=>x.id===S.selectedIslandId)
+      S.carouselIndex=S.homeList.findIndex(x=>x.id===S.selectedIslandId)
       document.querySelectorAll('.island-card').forEach(x=>x.classList.toggle('sel-island',x===el))
       document.querySelectorAll('#dots button').forEach((x,n)=>x.classList.toggle('on',n===S.carouselIndex))
       break
     }
     case 'dot':{
-      const idx=Number(el.dataset.index), track=document.getElementById('carousel')
-      track.scrollTo({left:idx*266,behavior:'smooth'});S.carouselIndex=idx;S.selectedIslandId=DATA.islands[idx].id
+      const idx=Number(el.dataset.index), track=document.getElementById('carousel'), id=S.homeList[idx]
+      if(!id)break
+      if(track)track.scrollTo({left:idx*266,behavior:'smooth'})
+      S.carouselIndex=idx;S.selectedIslandId=id
       document.querySelectorAll('#dots button').forEach((x,n)=>x.classList.toggle('on',n===idx))
       document.querySelectorAll('.island-card').forEach((x,n)=>x.classList.toggle('sel-island',n===idx))
       break
@@ -923,6 +998,7 @@ app.addEventListener('click',e=>{
 app.addEventListener('input',e=>{
   const f=e.target.dataset.field
   if(f==='nickname')S.nickname=e.target.value
+  if(f==='homeSearch'){S.searchQuery=e.target.value;applyHomeSearch()}
   if(f==='mapQuery'){S.mapQuery=e.target.value;applyMapFilter()}
   if(f==='excitement'){
     S.diary.excitement=Number(e.target.value)
@@ -934,6 +1010,7 @@ app.addEventListener('input',e=>{
   if(f==='discovery'){S.diary.discovery=e.target.value;const c=document.getElementById('discCount');if(c)c.textContent=e.target.value.length}
 })
 
+window.addEventListener('scroll',updateMiniHeader,{passive:true})
 render()
 </script>
 </body>
