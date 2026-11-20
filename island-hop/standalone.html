@@ -319,9 +319,9 @@ const DATA = {
     ['craft','手作','手'],['garden','园艺','园'],['video','化妆','妆'],['community','社群','群']
   ],
   levels:[
-    {id:'taste',name:'初步接触',duration:'30 分钟',price:39,desc:'职业观察与交流',hint:'先看看这座岛长什么样'},
-    {id:'light',name:'轻度体验',duration:'2 小时',price:99,desc:'完成一项真实任务',hint:'多数人选这档',badge:'多数人选这档'},
-    {id:'deep',name:'深度体验',duration:'半天',price:199,desc:'参与完整辅助流程',hint:'适合想再靠近一点的人'}
+    {id:'taste',name:'初步接触',duration:'半天',price:39,desc:'职业观察与交流',hint:'先看看这座岛长什么样'},
+    {id:'light',name:'轻度体验',duration:'一天',price:99,desc:'完成一项真实任务',hint:'多数人选这档',badge:'多数人选这档'},
+    {id:'deep',name:'深度体验',duration:'两天',price:159,desc:'参与完整辅助流程',hint:'适合想再靠近一点的人'}
   ],
   islands:[
     {id:'photo',name:'摄影师',en:'PHOTOGRAPHER',glyph:'摄',g:['#9FB9D8','#C6D8EA'],price:99,duration:'2 小时',distance:'1.8km',spots:4,rating:4.8,explorers:932,hot:'本周热门',summary:'跟着摄影师走一条街，完成一次真实的人像拍摄。',tags:['拍摄过程','空间布置','独自判断']},
@@ -401,7 +401,7 @@ const S = {
   mapQuery:'',activeStore:'s_coffee',carouselIndex:0,sheet:null,toast:'',
   searchQuery:'',homeList:DATA.islands.map(x=>x.id),
   bookings:[],bookingDate:{year:2026,month:11,day:19},activeBookingId:null,loggedIn:true,
-  mapPan:{x:0,y:0},mapZoom:1,mapHeadCollapsed:false,storesHidden:false,mapFullscreen:false
+  mapPan:{x:0,y:0},mapZoom:1,mapHeadCollapsed:false,storesHidden:false,mapFullscreen:false,payMethod:'wechat'
 }
 const app = document.getElementById('app')
 let toastTimer=null, timerId=null
@@ -410,6 +410,11 @@ let mapDrag=null, mapMoved=false
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 const findIsland = id => DATA.islands.find(x=>x.id===id)
 const findLevel = id => DATA.levels.find(x=>x.id===id)
+const levelPrice = (islandId,levelId) => {
+  const base=(findLevel(levelId)||DATA.levels[1]).price
+  const seed=(islandId||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0)+(levelId||'').length
+  return base+((seed%3)-1)*10
+}
 const findStore = id => DATA.stores.find(x=>x.id===id)
 const labelOf = id => {
   const all=[...DATA.diary.fun,...DATA.diary.hard]
@@ -910,7 +915,7 @@ function viewDetail(){
             const on=l.id===S.levelId
             return `<button data-action="level" data-id="${l.id}" style="padding:16px;border:1px solid ${on?'var(--deep)':'var(--line)'};border-radius:22px;background:${on?'rgba(234,241,248,.7)':'#fff'};text-align:left">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><p style="margin:0;font-size:14px;font-weight:700">${l.name}<span style="margin-left:8px;font-size:11px;font-weight:400;color:var(--muted)">${l.duration}</span></p><p style="margin:6px 0 0;font-size:11px;color:var(--muted)">${l.desc}</p></div><span style="display:grid;place-items:center;width:20px;height:20px;flex:none;border:1px solid ${on?'var(--deep)':'var(--line)'};border-radius:50%;background:${on?'var(--deep)':'transparent'};color:#fff">${on?ICON.check:''}</span></div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px"><span style="font-size:15px;font-weight:800">¥${l.price}</span>${l.badge?pill(l.badge,'green'):''}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px"><span style="font-size:15px;font-weight:800">¥${levelPrice(i.id,l.id)}</span>${l.badge?pill(l.badge,'green'):''}</div>
             </button>`
           }).join('')}
         </div>
@@ -926,7 +931,7 @@ function viewDetail(){
       <p style="text-align:center;font-size:10px;color:var(--muted);margin-top:24px">登岛不是承诺，只是一段真实的时间。</p>
     </div>
     <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:12px;width:100%;max-width:375px;padding:12px 20px;border-top:1px solid var(--line);background:rgba(255,255,255,.95);backdrop-filter:blur(10px)">
-      <div style="flex:none"><p style="margin:0;font-size:10px;color:var(--muted)">${bd.year}年${bd.month}月${bd.day}日 · ${lv.duration}</p><p style="margin:2px 0 0;font-size:19px;font-weight:800;line-height:1.1">¥${lv.price}</p></div>
+      <div style="flex:none"><p style="margin:0;font-size:10px;color:var(--muted)">${bd.year}年${bd.month}月${bd.day}日 · ${lv.duration}</p><p style="margin:2px 0 0;font-size:19px;font-weight:800;line-height:1.1">¥${levelPrice(i.id,lv.id)}</p></div>
       ${btn('确认预约 · 登岛','book')}
     </div>
   </div>`
@@ -1023,6 +1028,7 @@ function viewJournal(){
   const meta={revisit:['想再登岛','green'],excluded:['已排除','outline'],watching:['待观察','mist']}
   return `<div class="screen">
     <div class="hdr" style="padding-bottom:64px">${hdrDeco()}<div class="content">
+      ${backBar()}
       <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.22em;color:rgba(85,128,176,.7)">ISLAND JOURNAL</p>
       <h1 style="margin:12px 0 0;font-size:27px;letter-spacing:-.6px">跳岛日志</h1>
       <p style="margin:6px 0 0;font-size:12px;color:rgba(85,128,176,.85)">跳岛的第 ${S.profile.islandDays} 天 · ${esc(S.profile.nickname)}</p>
@@ -1104,7 +1110,7 @@ function viewBookings(){
     <div class="pad overlap" style="margin-top:-20px">
       ${list.length?`<div style="display:grid;gap:12px">${list.map(b=>{
         const i=findIsland(b.islandId),lv=findLevel(b.levelId)
-        return `<div class="card click" data-action="booking-detail" data-id="${b.id}" style="padding:16px;display:flex;align-items:center;gap:12px">${ring(i.glyph,46)}<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b style="font-size:14px">${i.name}</b>${pill(b.status==='completed'?'已完成':'待体验',b.status==='completed'?'green':'default')}</div><p style="margin:4px 0 0;font-size:11px;color:var(--muted)">${bookingDate(b)} · ${lv.name} · ¥${lv.price}</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`
+        return `<div class="card click" data-action="booking-detail" data-id="${b.id}" style="padding:16px;display:flex;align-items:center;gap:12px">${ring(i.glyph,46)}<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b style="font-size:14px">${i.name}</b>${pill(b.status==='completed'?'已完成':'待体验',b.status==='completed'?'green':'default')}</div><p style="margin:4px 0 0;font-size:11px;color:var(--muted)">${bookingDate(b)} · ${lv.name} · ¥${levelPrice(b.islandId,b.levelId)}</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`
       }).join('')}</div>`:`<div class="card" style="padding:32px 20px;text-align:center"><p style="margin:0;font-size:13px;font-weight:700">还没有预约记录</p><p class="smallnote" style="margin-top:8px">回到首页挑一座岛，选好日期就能预约。</p></div>`}
       <div style="margin-top:20px"><button data-action="nav" data-id="home" style="width:100%;padding:14px;border:1px solid var(--line);border-radius:99px;background:#fff;color:var(--deep);font-size:12px;font-weight:600">再挑一座岛</button></div>
       ${footer()}
@@ -1130,11 +1136,66 @@ function viewBookingDetail(){
           <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">登岛方式</span><b>${lv.name}</b></div>
           <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">带练导师</span><b>${st.mentor}</b></div>
           <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">集合地点</span><b>${st.name}</b></div>
-          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">预约金额</span><b>¥${lv.price}</b></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">预约金额</span><b>¥${levelPrice(b.islandId,b.levelId)}</b></div>
         </div>
       </div>
       <div style="margin-top:20px">${done?`<div class="card" style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">这次体验已完成，记录收进跳岛日志。</div>`:btn('开始体验','start-experience','deep')}</div>
       <button data-action="cancel-booking" style="display:block;margin:16px auto 0;border:0;background:none;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:4px">取消预约</button>
+      ${footer()}
+    </div>
+  </div>`
+}
+
+function viewPayment(){
+  const b=S.bookings.find(x=>x.id===S.activeBookingId)||S.bookings[0]
+  if(!b)return viewBookings()
+  const i=findIsland(b.islandId),lv=findLevel(b.levelId),price=levelPrice(b.islandId,b.levelId)
+  const methods=[['wechat','微信支付','WECHAT PAY','#7FC8A0'],['alipay','支付宝','ALIPAY','#8FC0E8'],['card','银行卡','BANK CARD','#C6B6E0'],['balance','跳岛余额','ISLAND BALANCE','#E8D3A9']]
+  return `<div class="screen" style="padding-bottom:120px">
+    <div class="hdr" style="padding-bottom:48px">${hdrDeco()}<div class="content">
+      ${backBar(pill('PAYMENT','glasspill'))}
+      <p style="margin:16px 0 0;font-size:10px;font-weight:700;letter-spacing:.22em;color:rgba(85,128,176,.7)">确认并支付</p>
+      <h1 style="margin:8px 0 0;font-size:26px;letter-spacing:-.5px">完成登岛预约</h1>
+      <p style="margin:8px 0 0;font-size:12px;color:rgba(85,128,176,.85)">${i.name} · ${lv.name} · ${bookingDate(b)}</p>
+    </div></div>
+    <div class="pad overlap" style="margin-top:-28px">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--muted)">应付金额</span><span style="font-size:26px;font-weight:800">¥${price}</span></div>
+        <p class="smallnote" style="margin-top:8px">包含导师带练与全部材料，无额外费用。</p>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:24px"><h2 style="margin:0;font-size:16px">选择支付方式</h2><span style="font-size:10px;color:var(--muted)">演示环境，不会真实扣款</span></div>
+      <div style="display:grid;gap:10px;margin-top:12px">
+        ${methods.map(([id,name,en,c])=>`<button class="card" data-action="choose-pay" data-method="${id}" style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid ${S.payMethod===id?'var(--deep)':'var(--line)'}">
+          <span style="display:grid;place-items:center;width:38px;height:38px;flex:none;border-radius:12px;background:${c};color:#fff;font-size:10px;font-weight:800">${name.slice(0,1)}</span>
+          <span style="flex:1;text-align:left"><b style="display:block;font-size:13px">${name}</b><small style="font-size:9px;color:var(--muted);letter-spacing:.1em">${en}</small></span>
+          <span style="display:grid;place-items:center;width:20px;height:20px;border:1px solid ${S.payMethod===id?'var(--deep)':'var(--line)'};border-radius:50%;background:${S.payMethod===id?'var(--deep)':'transparent'};color:#fff">${S.payMethod===id?ICON.check:''}</span>
+        </button>`).join('')}
+      </div>
+      <div style="margin-top:24px">${btn('立即支付 ¥'+price,'pay-now','deep')}</div>
+      <button data-action="cancel-payment" style="display:block;margin:16px auto 0;border:0;background:none;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:4px">暂不支付</button>
+    </div>
+  </div>`
+}
+function viewBookingSuccess(){
+  const b=S.bookings.find(x=>x.id===S.activeBookingId)||S.bookings[0]
+  if(!b)return viewHome()
+  const i=findIsland(b.islandId),lv=findLevel(b.levelId)
+  return `<div class="screen">
+    <div class="hdr" style="padding-bottom:56px">${hdrDeco()}<div class="content">
+      <div style="display:flex;align-items:center;justify-content:space-between">${pill('BOOKING CONFIRMED','glasspill')}<div class="glass-strong" style="display:grid;place-items:center;width:60px;height:60px;border-radius:50%;color:var(--deep)">${ICON.check}</div></div>
+      <p style="margin:32px 0 0;font-size:11px;color:rgba(85,128,176,.85)">${bookingDate(b)} · ${i.name}</p>
+      <h1 style="margin:12px 0 0;font-size:28px;line-height:1.35;letter-spacing:-.8px">预约成功，登岛已锁定。</h1>
+      <p style="margin:12px 0 0;max-width:300px;font-size:12px;line-height:1.9;color:rgba(85,128,176,.85)">${lv.name} · ¥${levelPrice(b.islandId,b.levelId)} 已支付。准备好之后，就可以开始体验了。</p>
+    </div></div>
+    <div class="pad overlap" style="margin-top:-26px">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:12px">${ring(i.glyph,48)}<div style="flex:1"><p style="margin:0;font-size:14px;font-weight:700">${i.name}</p><p style="margin:4px 0 0;font-size:11px;color:var(--muted)">${lv.name} · ${lv.duration} · ${bookingDate(b)}</p></div>${pill('已预约','green')}</div>
+      </div>
+      <div style="display:grid;gap:12px;margin-top:20px">
+        ${btn('开始体验','start-experience','deep')}
+        <button data-action="nav" data-id="home" style="width:100%;padding:14px;border:1px solid var(--line);border-radius:99px;background:#fff;color:var(--deep);font-size:12px;font-weight:600">返回首页</button>
+        <button data-action="nav-bookings" style="border:0;background:none;color:var(--primary);font-size:11px;font-weight:600">去预约记录查看 →</button>
+      </div>
       ${footer()}
     </div>
   </div>`
@@ -1181,7 +1242,7 @@ let lastRenderedScreen=null
 function render(){
   if(timerId&&S.screen!=='experience'){clearInterval(timerId);timerId=null}
   if(lastRenderedScreen!==S.screen){window.scrollTo(0,0);lastRenderedScreen=S.screen}
-  const views={onboarding:viewOnboarding,home:viewHome,search:viewSearch,map:viewMap,unlock:viewUnlock,detail:viewDetail,experience:viewExperience,diary:viewDiary,result:viewResult,journal:viewJournal,profile:viewProfile,bookings:viewBookings,bookingDetail:viewBookingDetail}
+  const views={onboarding:viewOnboarding,home:viewHome,search:viewSearch,map:viewMap,unlock:viewUnlock,detail:viewDetail,experience:viewExperience,diary:viewDiary,result:viewResult,journal:viewJournal,profile:viewProfile,bookings:viewBookings,bookingDetail:viewBookingDetail,payment:viewPayment,bookingSuccess:viewBookingSuccess}
   app.innerHTML=(views[S.screen]||viewHome)()+navHtml()+toastHtml()+sheetHtml()+miniHeaderHtml()+locFabHtml()+sectionMiniHtml()
   bindDynamic()
   updateMiniHeader()
@@ -1379,8 +1440,11 @@ app.addEventListener('click',e=>{
       const i=findIsland(S.selectedIslandId),lv=findLevel(S.levelId),bd=S.bookingDate
       const record={id:'b_'+Date.now(),islandId:i.id,levelId:lv.id,year:bd.year,month:bd.month,day:bd.day,status:'booked'}
       S.bookings.unshift(record);S.booking=record;S.activeBookingId=record.id
-      showToast('预约成功，可在预约记录里查看');render();break
+      navigate('payment');break
     }
+    case 'choose-pay':S.payMethod=el.dataset.method;render();break
+    case 'pay-now':showToast('支付成功');navigate('bookingSuccess');break
+    case 'cancel-payment':navigate('bookingDetail');break
     case 'booking-detail':S.activeBookingId=el.dataset.id;navigate('bookingDetail');break
     case 'start-experience':{
       const b=S.bookings.find(x=>x.id===S.activeBookingId)
