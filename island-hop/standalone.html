@@ -176,6 +176,9 @@ button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 .map-full .map-dark{height:calc(100vh - 12px)}
 .map-dark::before{content:"";position:absolute;inset:-20%;background-image:linear-gradient(rgba(85,128,176,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(85,128,176,.07) 1px,transparent 1px);background-size:38px 38px;transform:rotate(-9deg)}
 .map-canvas{position:absolute;inset:-18%;width:136%;height:136%;touch-action:none;will-change:transform;transform-origin:center center}
+.real-map{position:absolute;inset:0;overflow:hidden}
+.real-map img{position:absolute;width:256px;height:256px;max-width:none;filter:saturate(.5) brightness(1.06) contrast(.92);opacity:.94;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.map-credit{position:absolute;right:14px;bottom:8px;z-index:2;font-size:8px;color:rgba(85,128,176,.6)}
 .map-road{position:absolute;border-radius:99px;background:rgba(255,255,255,.82)}
 .map-label{position:absolute;font-size:10px;font-weight:700;letter-spacing:.16em;color:rgba(85,128,176,.55)}
 .map-ctrl{position:absolute;right:14px;top:14px;z-index:4;display:grid;gap:8px}
@@ -401,7 +404,8 @@ const S = {
   mapQuery:'',activeStore:'s_coffee',carouselIndex:0,sheet:null,toast:'',
   searchQuery:'',homeList:DATA.islands.map(x=>x.id),
   bookings:[],bookingDate:{year:2026,month:11,day:19},activeBookingId:null,loggedIn:true,
-  mapPan:{x:0,y:0},mapZoom:1,mapHeadCollapsed:false,storesHidden:false,mapFullscreen:false,payMethod:'wechat'
+  mapPan:{x:0,y:0},mapZoom:1,mapHeadCollapsed:false,storesHidden:false,mapFullscreen:false,payMethod:'wechat',
+  geo:{lat:31.224,lng:121.445}
 }
 const app = document.getElementById('app')
 let toastTimer=null, timerId=null
@@ -627,6 +631,20 @@ function nearestDistrict(lat,lng){
     return !best||dist<best.dist?{...d,dist}:best
   },null)
 }
+function coordsForLocation(loc){
+  const d=DISTRICTS.find(x=>loc.includes(x.city)&&loc.includes(x.district))||DISTRICTS.find(x=>loc.includes(x.city))||DISTRICTS[0]
+  return {lat:d.lat,lng:d.lng}
+}
+function mapTiles(lat,lng,zoom=15){
+  const n=2**zoom,fx=(lng+180)/360*n,rad=lat*Math.PI/180
+  const fy=(1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*n
+  const cx=Math.floor(fx),cy=Math.floor(fy),tiles=[]
+  for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+    const x=cx+dx,y=cy+dy
+    tiles.push({x,y,sub:((x%4)+4)%4+1,left:Math.round((x-fx)*256),top:Math.round((y-fy)*256)})
+  }
+  return tiles
+}
 async function resolveLocation(lat,lng){
   let city='',district='',street=''
   try{
@@ -820,9 +838,7 @@ function viewMap(){
     </div>
     <div class="map-dark">
       <div class="map-canvas" id="mapCanvas" style="transform:translate(${S.mapPan.x}px,${S.mapPan.y}px) scale(${S.mapZoom})">
-        <div class="map-road" style="left:-10%;top:30%;width:130%;height:10px;transform:rotate(-12deg)"></div>
-        <div class="map-road" style="left:24%;top:-10%;width:8px;height:130%;transform:rotate(10deg)"></div>
-        <div class="map-road" style="left:-20%;top:74%;width:140%;height:8px;transform:rotate(8deg)"></div>
+        <div class="real-map">${mapTiles(S.geo.lat,S.geo.lng).map(t=>`<img src="https://webrd0${t.sub}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x=${t.x}&y=${t.y}&z=15" style="left:calc(50% + ${t.left}px);top:calc(50% + ${t.top}px)" alt="">`).join('')}</div>
         <div class="map-label" style="left:11%;top:12%">${esc(district)}</div>
         <div class="map-label" style="right:12%;top:30%">${esc(street)}</div>
         <div class="map-label" style="left:12%;bottom:20%">${esc(parts[0]||'附近')} · 周边街道</div>
@@ -834,6 +850,7 @@ function viewMap(){
           return `<button class="photo-pin ${st.id===S.activeStore?'active':''}" data-action="store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="photo-ring"><img src="./images/${(PHOTOS[i.id]||PHOTOS.photo)[0]}" alt=""></span><span class="photo-tag">${label}</span></button>`
         }).join('')}
       </div>
+      <div class="map-credit">地图 © 高德 · ${esc(S.geo.lat.toFixed(3))}, ${esc(S.geo.lng.toFixed(3))}</div>
       <div class="map-ctrl">
         <button class="map-zoom" data-action="map-zoom-in" aria-label="放大" title="放大">＋</button>
         <button class="map-zoom" data-action="map-zoom-out" aria-label="缩小" title="缩小">−</button>
@@ -1363,12 +1380,13 @@ app.addEventListener('click',e=>{
       showToast('正在获取精确位置…')
       navigator.geolocation.getCurrentPosition(pos=>{
         resolveLocation(pos.coords.latitude,pos.coords.longitude).then(loc=>{
+          S.geo={lat:pos.coords.latitude,lng:pos.coords.longitude}
           S.location=loc;S.sheet=null;render();showToast('已定位到 '+loc)
         }).catch(()=>showToast('定位失败，请手动选择地点'))
       },()=>showToast('定位失败，请手动选择地点'),{enableHighAccuracy:true,timeout:12000,maximumAge:0})
       break
     }
-    case 'choose-location':S.location=el.dataset.value;S.sheet=null;render();showToast('定位已更新 · '+S.location);break
+    case 'choose-location':S.location=el.dataset.value;S.geo=coordsForLocation(S.location);S.sheet=null;render();showToast('定位已更新 · '+S.location);break
     case 'custom-location':{
       const v=(document.getElementById('customLocation')||{}).value?.trim()
       if(v){S.location=v;S.sheet=null;render();showToast('定位已更新 · '+S.location)}
