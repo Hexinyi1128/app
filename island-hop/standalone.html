@@ -175,7 +175,7 @@ button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 .map-full .map-dark{height:calc(100vh - 12px)}
 .map-dark::before{content:"";position:absolute;inset:-20%;background-image:linear-gradient(rgba(85,128,176,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(85,128,176,.07) 1px,transparent 1px);background-size:38px 38px;transform:rotate(-9deg)}
 .map-canvas{position:absolute;inset:-18%;width:136%;height:136%;touch-action:none;will-change:transform;transform-origin:center center}
-.real-map{position:absolute;inset:0;overflow:hidden}
+.real-map{position:absolute;inset:0;overflow:hidden;transform-origin:center center}
 .real-map img{position:absolute;width:256px;height:256px;max-width:none;filter:saturate(.5) brightness(1.06) contrast(.92);opacity:.94;pointer-events:none;user-select:none;-webkit-user-drag:none}
 .map-credit{position:absolute;right:14px;bottom:8px;z-index:2;font-size:8px;color:rgba(85,128,176,.6)}
 .map-road{position:absolute;border-radius:99px;background:rgba(255,255,255,.82)}
@@ -538,7 +538,7 @@ function updateStoresSection(){
 }
 function applyMapTransform(){
   const layer=document.getElementById('realMap')
-  if(layer)layer.style.transform=`translate(${S.mapPan.x}px,${S.mapPan.y}px)`
+  if(layer)layer.style.transform=`translate(${S.mapPan.x}px,${S.mapPan.y}px) scale(${mapScale()})`
 }
 function updateSectionHead(){
   const mapOff=S.screen==='map'&&(S.mapHeadCollapsed||window.scrollY>90)
@@ -639,14 +639,16 @@ function mapFraction(z){
   const fy=(1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*n
   return {fx,fy,n}
 }
+function mapScale(){return 0.8+(S.mapZoom-1)*0.4}
 function renderRealMap(){
   const host=document.getElementById('realMap')
   if(!host)return
-  const z=14+S.mapZoom,{fx,fy}=mapFraction(z)
+  const z=16,{fx,fy}=mapFraction(z)
   const rect=host.getBoundingClientRect?host.getBoundingClientRect():null
-  const w=(rect&&rect.width)||420,h=(rect&&rect.height)||620
-  const minX=Math.floor(fx-w/512)-1,maxX=Math.ceil(fx+w/512)+1
-  const minY=Math.floor(fy-h/512)-1,maxY=Math.ceil(fy+h/512)+1
+  const w=(rect&&rect.width)||520,h=(rect&&rect.height)||720
+  const span=Math.ceil(Math.max(w,h)/512)+2
+  const minX=Math.floor(fx)-span,maxX=Math.ceil(fx)+span
+  const minY=Math.floor(fy)-span,maxY=Math.ceil(fy)+span
   let html=''
   for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++){
     const sub=((x%4)+4)%4+1
@@ -654,15 +656,13 @@ function renderRealMap(){
     html+=`<img src="https://webrd0${sub}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x=${x}&y=${y}&z=${z}" style="left:${left}px;top:${top}px" alt="">`
   }
   host.innerHTML=html
-  host.style.transform=''
+  applyMapTransform()
 }
 function recenterFromPan(){
   const host=document.getElementById('realMap')
   if(!host)return
-  const {fx,fy,n}=mapFraction(14+S.mapZoom)
-  const rect=host.getBoundingClientRect?host.getBoundingClientRect():null
-  const w=(rect&&rect.width)||420,h=(rect&&rect.height)||620
-  const nfx=fx-S.mapPan.x/256,nfy=fy-S.mapPan.y/256
+  const scale=mapScale(),{fx,fy,n}=mapFraction(16)
+  const nfx=fx-S.mapPan.x/(256*scale),nfy=fy-S.mapPan.y/(256*scale)
   S.mapCenter={lat:Math.atan(Math.sinh(Math.PI*(1-2*nfy/n)))*180/Math.PI,lng:nfx/n*360-180}
   S.mapPan={x:0,y:0}
   renderRealMap()
@@ -1395,8 +1395,8 @@ app.addEventListener('click',e=>{
     case 'close-sheet':S.sheet=null;render();break
     case 'location':case 'locate':S.sheet='location';render();break
     case 'map-reset':S.mapPan={x:0,y:0};S.mapZoom=2;S.mapCenter={...S.geo};renderRealMap();break
-    case 'map-zoom-in':if(S.mapZoom<4){S.mapZoom++;S.mapPan={x:0,y:0};renderRealMap()}break
-    case 'map-zoom-out':if(S.mapZoom>1){S.mapZoom--;S.mapPan={x:0,y:0};renderRealMap()}break
+    case 'map-zoom-in':if(S.mapZoom<4){S.mapZoom++;applyMapTransform()}break
+    case 'map-zoom-out':if(S.mapZoom>1){S.mapZoom--;applyMapTransform()}break
     case 'expand-section':S.mapHeadCollapsed=false;updateSectionHead();window.scrollTo({top:0,behavior:'smooth'});break
     case 'use-geolocation':{
       if(!navigator.geolocation){showToast('当前浏览器不支持定位');break}
@@ -1570,7 +1570,7 @@ app.addEventListener('wheel',e=>{
   if(!e.target.closest('.map-dark'))return
   e.preventDefault()
   const next=Math.max(1,Math.min(4,S.mapZoom+(e.deltaY<0?1:-1)))
-  if(next!==S.mapZoom){S.mapZoom=next;S.mapPan={x:0,y:0};renderRealMap()}
+  if(next!==S.mapZoom){S.mapZoom=next;applyMapTransform()}
 },{passive:false})
 
 window.addEventListener('scroll',()=>{
