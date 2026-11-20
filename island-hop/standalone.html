@@ -537,7 +537,7 @@ function updateStoresSection(){
   app.classList.toggle('map-full',S.screen==='map'&&S.mapFullscreen)
 }
 function applyMapTransform(){
-  const layer=document.getElementById('realMap')
+  const layer=document.getElementById('mapCanvas')
   if(layer)layer.style.transform=`translate(${S.mapPan.x}px,${S.mapPan.y}px) scale(${mapScale()})`
 }
 function updateSectionHead(){
@@ -634,41 +634,7 @@ function coordsForLocation(loc){
   const d=DISTRICTS.find(x=>loc.includes(x.city)&&loc.includes(x.district))||DISTRICTS.find(x=>loc.includes(x.city))||DISTRICTS[0]
   return {lat:d.lat,lng:d.lng}
 }
-function mapFraction(z){
-  const n=2**z,fx=(S.mapCenter.lng+180)/360*n,rad=S.mapCenter.lat*Math.PI/180
-  const fy=(1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*n
-  return {fx,fy,n}
-}
 function mapScale(){return 0.8+(S.mapZoom-1)*0.4}
-function renderRealMap(){
-  const host=document.getElementById('realMap')
-  if(!host)return
-  const z=16,{fx,fy}=mapFraction(z)
-  const rect=host.getBoundingClientRect?host.getBoundingClientRect():null
-  const w=(rect&&rect.width)||520,h=(rect&&rect.height)||720
-  const span=Math.ceil(Math.max(w,h)/512)+2
-  const minX=Math.floor(fx)-span,maxX=Math.ceil(fx)+span
-  const minY=Math.floor(fy)-span,maxY=Math.ceil(fy)+span
-  let html=''
-  for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++){
-    const sub=((x%4)+4)%4+1
-    const left=Math.round((x-fx)*256+w/2),top=Math.round((y-fy)*256+h/2)
-    html+=`<img src="https://webrd0${sub}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x=${x}&y=${y}&z=${z}" style="left:${left}px;top:${top}px" alt="">`
-  }
-  host.innerHTML=html
-  applyMapTransform()
-}
-function recenterFromPan(){
-  const host=document.getElementById('realMap')
-  if(!host)return
-  const scale=mapScale(),{fx,fy,n}=mapFraction(16)
-  const nfx=fx-S.mapPan.x/(256*scale),nfy=fy-S.mapPan.y/(256*scale)
-  S.mapCenter={lat:Math.atan(Math.sinh(Math.PI*(1-2*nfy/n)))*180/Math.PI,lng:nfx/n*360-180}
-  S.mapPan={x:0,y:0}
-  renderRealMap()
-  const credit=document.querySelector('.map-credit')
-  if(credit)credit.textContent=`地图 © 高德 · ${S.mapCenter.lat.toFixed(3)}, ${S.mapCenter.lng.toFixed(3)}`
-}
 async function resolveLocation(lat,lng){
   let city='',district='',street=''
   try{
@@ -861,18 +827,22 @@ function viewMap(){
       <div style="display:flex;align-items:center;gap:8px;margin-top:16px;padding:12px 16px;border-radius:999px;background:var(--page);color:var(--primary)">${ICON.search}<input data-field="mapQuery" value="${esc(S.mapQuery)}" placeholder="${esc(S.location)}" style="width:100%;border:0;background:transparent;outline:none;font-size:12px;color:var(--ink)"><button data-action="location" title="修改定位" style="display:grid;place-items:center;border:0;background:none;color:var(--primary)">${ICON.pin}</button></div>
     </div>
     <div class="map-dark">
-      <div class="map-canvas" id="mapCanvas"><div class="real-map" id="realMap"></div></div>
-      <div class="map-label" style="left:11%;top:12%">${esc(district)}</div>
-      <div class="map-label" style="right:12%;top:30%">${esc(street)}</div>
-      <div class="map-label" style="left:12%;bottom:20%">${esc(parts[0]||'附近')} · 周边街道</div>
-      <div class="ping"></div>
-      ${[['baker.jpg',12,22],['design.jpg',88,32],['florist.jpg',18,68],['petgroom.jpg',84,76],['makeup.jpg',50,92]].map(([f,x,y])=>`<span class="photo-dot" style="left:${x}%;top:${y}%;background-image:url('./images/${f}')"></span>`).join('')}
+      <div class="map-canvas" id="mapCanvas">
+        <div class="map-road" style="left:-10%;top:30%;width:130%;height:10px;transform:rotate(-12deg)"></div>
+        <div class="map-road" style="left:24%;top:-10%;width:8px;height:130%;transform:rotate(10deg)"></div>
+        <div class="map-road" style="left:-20%;top:74%;width:140%;height:8px;transform:rotate(8deg)"></div>
+        <div class="map-label" style="left:11%;top:12%">${esc(district)}</div>
+        <div class="map-label" style="right:12%;top:30%">${esc(street)}</div>
+        <div class="map-label" style="left:12%;bottom:20%">${esc(parts[0]||'附近')} · 周边</div>
+        <div class="ping"></div>
+        ${[['baker.jpg',12,22],['design.jpg',88,32],['florist.jpg',18,68],['petgroom.jpg',84,76],['makeup.jpg',50,92]].map(([f,x,y])=>`<span class="photo-dot" style="left:${x}%;top:${y}%;background-image:url('./images/${f}')"></span>`).join('')}
+      </div>
       ${DATA.stores.map(st=>{
         const i=findIsland(st.islandId)
         const label={coffee:'咖啡',photo:'摄影',florist:'花艺',design:'设计',light:'灯光'}[i.id]||i.name
         return `<button class="photo-pin ${st.id===S.activeStore?'active':''}" data-action="store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="photo-ring"><img src="./images/${(PHOTOS[i.id]||PHOTOS.photo)[0]}" alt=""></span><span class="photo-tag">${label}</span></button>`
       }).join('')}
-      <div class="map-credit">地图 © 高德 · ${esc(S.mapCenter.lat.toFixed(3))}, ${esc(S.mapCenter.lng.toFixed(3))}</div>
+      <div class="map-credit">示意图 · 店铺位置仅为大致方位</div>
       <div class="map-ctrl">
         <button class="map-zoom" data-action="map-zoom-in" aria-label="放大" title="放大">＋</button>
         <button class="map-zoom" data-action="map-zoom-out" aria-label="缩小" title="缩小">−</button>
@@ -1287,7 +1257,7 @@ function render(){
   updateMiniHeader()
   updateSectionHead()
   updateStoresSection()
-  if(S.screen==='map')setTimeout(renderRealMap,0)
+  if(S.screen==='map')setTimeout(applyMapTransform,0)
 }
 function bindDynamic(){
   const carousel=document.getElementById('carousel')
@@ -1394,7 +1364,7 @@ app.addEventListener('click',e=>{
     case 'plus':S.sheet='plus';render();break
     case 'close-sheet':S.sheet=null;render();break
     case 'location':case 'locate':S.sheet='location';render();break
-    case 'map-reset':S.mapPan={x:0,y:0};S.mapZoom=2;S.mapCenter={...S.geo};renderRealMap();break
+    case 'map-reset':S.mapPan={x:0,y:0};S.mapZoom=2;applyMapTransform();break
     case 'map-zoom-in':if(S.mapZoom<4){S.mapZoom++;applyMapTransform()}break
     case 'map-zoom-out':if(S.mapZoom>1){S.mapZoom--;applyMapTransform()}break
     case 'expand-section':S.mapHeadCollapsed=false;updateSectionHead();window.scrollTo({top:0,behavior:'smooth'});break
@@ -1562,10 +1532,10 @@ app.addEventListener('pointermove',e=>{
   applyMapTransform()
 })
 app.addEventListener('pointerup',()=>{
-  if(mapDrag&&mapMoved){recenterFromPan();setTimeout(()=>{mapMoved=false},60)}
+  if(mapDrag&&mapMoved)setTimeout(()=>{mapMoved=false},60)
   mapDrag=null
 })
-app.addEventListener('pointercancel',()=>{if(mapDrag&&mapMoved)recenterFromPan();mapDrag=null})
+app.addEventListener('pointercancel',()=>{mapDrag=null})
 app.addEventListener('wheel',e=>{
   if(!e.target.closest('.map-dark'))return
   e.preventDefault()
@@ -1577,7 +1547,18 @@ window.addEventListener('scroll',()=>{
   updateMiniHeader();updateSectionHead()
   if(window.scrollY>30&&S.storesHidden){S.storesHidden=false;S.mapFullscreen=false;updateStoresSection()}
 },{passive:true})
+function autoLocate(){
+  if(!navigator.geolocation)return
+  try{if(sessionStorage.getItem('islandAutoLocate'))return;sessionStorage.setItem('islandAutoLocate','1')}catch(e){}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    resolveLocation(pos.coords.latitude,pos.coords.longitude).then(loc=>{
+      S.geo={lat:pos.coords.latitude,lng:pos.coords.longitude}
+      S.mapCenter={...S.geo};S.location=loc;render()
+    }).catch(()=>{})
+  },()=>{},{enableHighAccuracy:false,timeout:8000})
+}
 render()
+autoLocate()
 </script>
 </body>
 </html>
