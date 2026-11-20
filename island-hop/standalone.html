@@ -21,9 +21,8 @@ button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 .screen{min-height:100%;padding-bottom:100px}
 .overlap{position:relative;z-index:6;margin-left:12px;margin-right:12px}
 
-#splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#E8EDF2}
-#splash .splash-frame{position:relative;width:min(100vw,calc(100dvh * 9 / 16),375px);height:min(100dvh,calc(100vw * 16 / 9),667px);overflow:hidden;border-radius:30px;background:linear-gradient(150deg,#9FB9D8,#6E96C2);box-shadow:0 24px 60px rgba(42,45,51,.2);transition:opacity .35s ease,transform .35s ease}
-@media(max-width:639px){#splash .splash-frame{border-radius:0}}
+#splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:8px;background:#E8EDF2}
+#splash .splash-frame{position:relative;width:100%;height:100%;overflow:hidden;border-radius:28px;background:linear-gradient(150deg,#9FB9D8,#6E96C2);box-shadow:0 24px 60px rgba(42,45,51,.2);transition:opacity .35s ease,transform .35s ease}
 #splash.out .splash-frame{opacity:0;transform:scale(1.04);pointer-events:none}
 #splash svg{width:100%;height:100%;display:block}
 #splash .stitle{position:absolute;top:18%;left:0;right:0;text-align:center;color:#fff;opacity:0;animation:fadeUp .7s .25s ease-out forwards}
@@ -269,7 +268,7 @@ input.text::placeholder{color:var(--mist)}
 <div id="splash">
  <div class="splash-frame">
   <div class="stitle"><b>跳岛</b><span>ISLAND HOP</span></div>
-  <svg viewBox="0 0 375 667" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+  <svg viewBox="0 0 375 667" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <defs>
       <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity=".45"/></linearGradient>
     </defs>
@@ -404,8 +403,8 @@ const S = {
   mapQuery:'',activeStore:'s_coffee',carouselIndex:0,sheet:null,toast:'',
   searchQuery:'',homeList:DATA.islands.map(x=>x.id),
   bookings:[],bookingDate:{year:2026,month:11,day:19},activeBookingId:null,loggedIn:true,
-  mapPan:{x:0,y:0},mapZoom:1,mapHeadCollapsed:false,storesHidden:false,mapFullscreen:false,payMethod:'wechat',
-  geo:{lat:31.224,lng:121.445}
+  mapPan:{x:0,y:0},mapZoom:2,mapHeadCollapsed:false,storesHidden:false,mapFullscreen:false,payMethod:'wechat',
+  geo:{lat:31.224,lng:121.445},mapCenter:{lat:31.224,lng:121.445}
 }
 const app = document.getElementById('app')
 let toastTimer=null, timerId=null
@@ -538,8 +537,8 @@ function updateStoresSection(){
   app.classList.toggle('map-full',S.screen==='map'&&S.mapFullscreen)
 }
 function applyMapTransform(){
-  const c=document.getElementById('mapCanvas')
-  if(c)c.style.transform=`translate(${S.mapPan.x}px,${S.mapPan.y}px) scale(${S.mapZoom})`
+  const layer=document.getElementById('realMap')
+  if(layer)layer.style.transform=`translate(${S.mapPan.x}px,${S.mapPan.y}px)`
 }
 function updateSectionHead(){
   const mapOff=S.screen==='map'&&(S.mapHeadCollapsed||window.scrollY>90)
@@ -635,15 +634,40 @@ function coordsForLocation(loc){
   const d=DISTRICTS.find(x=>loc.includes(x.city)&&loc.includes(x.district))||DISTRICTS.find(x=>loc.includes(x.city))||DISTRICTS[0]
   return {lat:d.lat,lng:d.lng}
 }
-function mapTiles(lat,lng,zoom=15){
-  const n=2**zoom,fx=(lng+180)/360*n,rad=lat*Math.PI/180
+function mapFraction(z){
+  const n=2**z,fx=(S.mapCenter.lng+180)/360*n,rad=S.mapCenter.lat*Math.PI/180
   const fy=(1-Math.log(Math.tan(rad)+1/Math.cos(rad))/Math.PI)/2*n
-  const cx=Math.floor(fx),cy=Math.floor(fy),tiles=[]
-  for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
-    const x=cx+dx,y=cy+dy
-    tiles.push({x,y,sub:((x%4)+4)%4+1,left:Math.round((x-fx)*256),top:Math.round((y-fy)*256)})
+  return {fx,fy,n}
+}
+function renderRealMap(){
+  const host=document.getElementById('realMap')
+  if(!host)return
+  const z=14+S.mapZoom,{fx,fy}=mapFraction(z)
+  const rect=host.getBoundingClientRect?host.getBoundingClientRect():null
+  const w=(rect&&rect.width)||420,h=(rect&&rect.height)||620
+  const minX=Math.floor(fx-w/512)-1,maxX=Math.ceil(fx+w/512)+1
+  const minY=Math.floor(fy-h/512)-1,maxY=Math.ceil(fy+h/512)+1
+  let html=''
+  for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++){
+    const sub=((x%4)+4)%4+1
+    const left=Math.round((x-fx)*256+w/2),top=Math.round((y-fy)*256+h/2)
+    html+=`<img src="https://webrd0${sub}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x=${x}&y=${y}&z=${z}" style="left:${left}px;top:${top}px" alt="">`
   }
-  return tiles
+  host.innerHTML=html
+  host.style.transform=''
+}
+function recenterFromPan(){
+  const host=document.getElementById('realMap')
+  if(!host)return
+  const {fx,fy,n}=mapFraction(14+S.mapZoom)
+  const rect=host.getBoundingClientRect?host.getBoundingClientRect():null
+  const w=(rect&&rect.width)||420,h=(rect&&rect.height)||620
+  const nfx=fx-S.mapPan.x/256,nfy=fy-S.mapPan.y/256
+  S.mapCenter={lat:Math.atan(Math.sinh(Math.PI*(1-2*nfy/n)))*180/Math.PI,lng:nfx/n*360-180}
+  S.mapPan={x:0,y:0}
+  renderRealMap()
+  const credit=document.querySelector('.map-credit')
+  if(credit)credit.textContent=`地图 © 高德 · ${S.mapCenter.lat.toFixed(3)}, ${S.mapCenter.lng.toFixed(3)}`
 }
 async function resolveLocation(lat,lng){
   let city='',district='',street=''
@@ -837,20 +861,18 @@ function viewMap(){
       <div style="display:flex;align-items:center;gap:8px;margin-top:16px;padding:12px 16px;border-radius:999px;background:var(--page);color:var(--primary)">${ICON.search}<input data-field="mapQuery" value="${esc(S.mapQuery)}" placeholder="${esc(S.location)}" style="width:100%;border:0;background:transparent;outline:none;font-size:12px;color:var(--ink)"><button data-action="location" title="修改定位" style="display:grid;place-items:center;border:0;background:none;color:var(--primary)">${ICON.pin}</button></div>
     </div>
     <div class="map-dark">
-      <div class="map-canvas" id="mapCanvas" style="transform:translate(${S.mapPan.x}px,${S.mapPan.y}px) scale(${S.mapZoom})">
-        <div class="real-map">${mapTiles(S.geo.lat,S.geo.lng).map(t=>`<img src="https://webrd0${t.sub}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x=${t.x}&y=${t.y}&z=15" style="left:calc(50% + ${t.left}px);top:calc(50% + ${t.top}px)" alt="">`).join('')}</div>
-        <div class="map-label" style="left:11%;top:12%">${esc(district)}</div>
-        <div class="map-label" style="right:12%;top:30%">${esc(street)}</div>
-        <div class="map-label" style="left:12%;bottom:20%">${esc(parts[0]||'附近')} · 周边街道</div>
-        <div class="ping"></div>
-        ${[['baker.jpg',12,22],['design.jpg',88,32],['florist.jpg',18,68],['petgroom.jpg',84,76],['makeup.jpg',50,92]].map(([f,x,y])=>`<span class="photo-dot" style="left:${x}%;top:${y}%;background-image:url('./images/${f}')"></span>`).join('')}
-        ${DATA.stores.map(st=>{
-          const i=findIsland(st.islandId)
-          const label={coffee:'咖啡',photo:'摄影',florist:'花艺',design:'设计',light:'灯光'}[i.id]||i.name
-          return `<button class="photo-pin ${st.id===S.activeStore?'active':''}" data-action="store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="photo-ring"><img src="./images/${(PHOTOS[i.id]||PHOTOS.photo)[0]}" alt=""></span><span class="photo-tag">${label}</span></button>`
-        }).join('')}
-      </div>
-      <div class="map-credit">地图 © 高德 · ${esc(S.geo.lat.toFixed(3))}, ${esc(S.geo.lng.toFixed(3))}</div>
+      <div class="map-canvas" id="mapCanvas"><div class="real-map" id="realMap"></div></div>
+      <div class="map-label" style="left:11%;top:12%">${esc(district)}</div>
+      <div class="map-label" style="right:12%;top:30%">${esc(street)}</div>
+      <div class="map-label" style="left:12%;bottom:20%">${esc(parts[0]||'附近')} · 周边街道</div>
+      <div class="ping"></div>
+      ${[['baker.jpg',12,22],['design.jpg',88,32],['florist.jpg',18,68],['petgroom.jpg',84,76],['makeup.jpg',50,92]].map(([f,x,y])=>`<span class="photo-dot" style="left:${x}%;top:${y}%;background-image:url('./images/${f}')"></span>`).join('')}
+      ${DATA.stores.map(st=>{
+        const i=findIsland(st.islandId)
+        const label={coffee:'咖啡',photo:'摄影',florist:'花艺',design:'设计',light:'灯光'}[i.id]||i.name
+        return `<button class="photo-pin ${st.id===S.activeStore?'active':''}" data-action="store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="photo-ring"><img src="./images/${(PHOTOS[i.id]||PHOTOS.photo)[0]}" alt=""></span><span class="photo-tag">${label}</span></button>`
+      }).join('')}
+      <div class="map-credit">地图 © 高德 · ${esc(S.mapCenter.lat.toFixed(3))}, ${esc(S.mapCenter.lng.toFixed(3))}</div>
       <div class="map-ctrl">
         <button class="map-zoom" data-action="map-zoom-in" aria-label="放大" title="放大">＋</button>
         <button class="map-zoom" data-action="map-zoom-out" aria-label="缩小" title="缩小">−</button>
@@ -1265,6 +1287,7 @@ function render(){
   updateMiniHeader()
   updateSectionHead()
   updateStoresSection()
+  if(S.screen==='map')setTimeout(renderRealMap,0)
 }
 function bindDynamic(){
   const carousel=document.getElementById('carousel')
@@ -1371,9 +1394,9 @@ app.addEventListener('click',e=>{
     case 'plus':S.sheet='plus';render();break
     case 'close-sheet':S.sheet=null;render();break
     case 'location':case 'locate':S.sheet='location';render();break
-    case 'map-reset':S.mapPan={x:0,y:0};S.mapZoom=1;applyMapTransform();break
-    case 'map-zoom-in':S.mapZoom=Math.min(2.2,Math.round((S.mapZoom+.25)*100)/100);applyMapTransform();break
-    case 'map-zoom-out':S.mapZoom=Math.max(1,Math.round((S.mapZoom-.25)*100)/100);applyMapTransform();break
+    case 'map-reset':S.mapPan={x:0,y:0};S.mapZoom=2;S.mapCenter={...S.geo};renderRealMap();break
+    case 'map-zoom-in':if(S.mapZoom<4){S.mapZoom++;S.mapPan={x:0,y:0};renderRealMap()}break
+    case 'map-zoom-out':if(S.mapZoom>1){S.mapZoom--;S.mapPan={x:0,y:0};renderRealMap()}break
     case 'expand-section':S.mapHeadCollapsed=false;updateSectionHead();window.scrollTo({top:0,behavior:'smooth'});break
     case 'use-geolocation':{
       if(!navigator.geolocation){showToast('当前浏览器不支持定位');break}
@@ -1381,12 +1404,13 @@ app.addEventListener('click',e=>{
       navigator.geolocation.getCurrentPosition(pos=>{
         resolveLocation(pos.coords.latitude,pos.coords.longitude).then(loc=>{
           S.geo={lat:pos.coords.latitude,lng:pos.coords.longitude}
+          S.mapCenter={...S.geo};S.mapPan={x:0,y:0}
           S.location=loc;S.sheet=null;render();showToast('已定位到 '+loc)
         }).catch(()=>showToast('定位失败，请手动选择地点'))
       },()=>showToast('定位失败，请手动选择地点'),{enableHighAccuracy:true,timeout:12000,maximumAge:0})
       break
     }
-    case 'choose-location':S.location=el.dataset.value;S.geo=coordsForLocation(S.location);S.sheet=null;render();showToast('定位已更新 · '+S.location);break
+    case 'choose-location':S.location=el.dataset.value;S.geo=coordsForLocation(S.location);S.mapCenter={...S.geo};S.mapPan={x:0,y:0};S.sheet=null;render();showToast('定位已更新 · '+S.location);break
     case 'custom-location':{
       const v=(document.getElementById('customLocation')||{}).value?.trim()
       if(v){S.location=v;S.sheet=null;render();showToast('定位已更新 · '+S.location)}
@@ -1533,17 +1557,20 @@ app.addEventListener('pointermove',e=>{
   if(!mapDrag||mapDrag.id!==e.pointerId)return
   const dx=e.clientX-mapDrag.x,dy=e.clientY-mapDrag.y
   if(Math.abs(dx)+Math.abs(dy)>4)mapMoved=true
-  S.mapPan.x=Math.max(-90,Math.min(90,mapDrag.ox+dx))
-  S.mapPan.y=Math.max(-90,Math.min(90,mapDrag.oy+dy))
+  S.mapPan.x=mapDrag.ox+dx
+  S.mapPan.y=mapDrag.oy+dy
   applyMapTransform()
 })
-app.addEventListener('pointerup',()=>{if(mapDrag&&mapMoved)setTimeout(()=>{mapMoved=false},60);mapDrag=null})
-app.addEventListener('pointercancel',()=>{mapDrag=null})
+app.addEventListener('pointerup',()=>{
+  if(mapDrag&&mapMoved){recenterFromPan();setTimeout(()=>{mapMoved=false},60)}
+  mapDrag=null
+})
+app.addEventListener('pointercancel',()=>{if(mapDrag&&mapMoved)recenterFromPan();mapDrag=null})
 app.addEventListener('wheel',e=>{
   if(!e.target.closest('.map-dark'))return
   e.preventDefault()
-  S.mapZoom=Math.max(1,Math.min(2.2,Math.round((S.mapZoom+(e.deltaY<0?.15:-.15))*100)/100))
-  applyMapTransform()
+  const next=Math.max(1,Math.min(4,S.mapZoom+(e.deltaY<0?1:-1)))
+  if(next!==S.mapZoom){S.mapZoom=next;S.mapPan={x:0,y:0};renderRealMap()}
 },{passive:false})
 
 window.addEventListener('scroll',()=>{
