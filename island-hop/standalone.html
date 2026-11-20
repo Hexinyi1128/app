@@ -196,7 +196,6 @@ button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 .photo-tag{padding:3px 9px;border-radius:8px;background:#fff;color:var(--ink);font-size:10px;font-weight:800;white-space:nowrap;box-shadow:0 4px 10px rgba(85,128,176,.18);transform:rotate(-3deg)}
 .photo-pin.active .photo-ring{padding:3px;background:var(--primary)}
 .photo-pin.active .photo-tag{background:var(--primary);color:#fff}
-.photo-dot{position:absolute;width:30px;height:30px;border:2px solid rgba(255,255,255,.94);border-radius:50%;background-size:cover;background-position:center;box-shadow:0 4px 10px rgba(85,128,176,.22);filter:saturate(.62) brightness(1.1)}
 .stores-section{max-height:1400px;overflow:hidden;padding-top:20px;opacity:1;transition:max-height .35s ease,padding .3s ease,opacity .25s ease}
 .stores-section.collapsed{max-height:58px;padding-top:0;opacity:1;pointer-events:auto}
 .stores-peek{display:none;width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--deep);font-size:11px;font-weight:700;text-align:left;box-shadow:0 6px 18px rgba(85,128,176,.08)}
@@ -834,13 +833,12 @@ function viewMap(){
         <div class="map-label" style="left:11%;top:12%">${esc(district)}</div>
         <div class="map-label" style="right:12%;top:30%">${esc(street)}</div>
         <div class="map-label" style="left:12%;bottom:20%">${esc(parts[0]||'附近')} · 周边</div>
-        <div class="ping"></div>
-        ${[['baker.jpg',12,22],['design.jpg',88,32],['florist.jpg',18,68],['petgroom.jpg',84,76],['makeup.jpg',50,92]].map(([f,x,y])=>`<span class="photo-dot" style="left:${x}%;top:${y}%;background-image:url('./images/${f}')"></span>`).join('')}
       </div>
+      <div class="ping"></div>
       ${DATA.stores.map(st=>{
         const i=findIsland(st.islandId)
         const label={coffee:'咖啡',photo:'摄影',florist:'花艺',design:'设计',light:'灯光'}[i.id]||i.name
-        return `<button class="photo-pin ${st.id===S.activeStore?'active':''}" data-action="store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="photo-ring"><img src="./images/${(PHOTOS[i.id]||PHOTOS.photo)[0]}" alt=""></span><span class="photo-tag">${label}</span></button>`
+        return `<button class="photo-pin ${st.id===S.activeStore?'active':''}" data-action="open-detail-store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="photo-ring"><img src="./images/${(PHOTOS[i.id]||PHOTOS.photo)[0]}" alt=""></span><span class="photo-tag">${label}</span></button>`
       }).join('')}
       <div class="map-credit">示意图 · 店铺位置仅为大致方位</div>
       <div class="map-ctrl">
