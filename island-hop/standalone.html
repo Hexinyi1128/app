@@ -838,7 +838,7 @@ function viewMap(){
       ${DATA.stores.map(st=>{
         const i=findIsland(st.islandId)
         const label={coffee:'咖啡',photo:'摄影',florist:'花艺',design:'设计',light:'灯光'}[i.id]||i.name
-        return `<button class="photo-pin ${st.id===S.activeStore?'active':''}" data-action="open-detail-store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="photo-ring"><img src="./images/${(PHOTOS[i.id]||PHOTOS.photo)[0]}" alt=""></span><span class="photo-tag">${label}</span></button>`
+        return `<button class="photo-pin ${st.id===S.activeStore?'active':''}" data-action="store" data-store="${st.id}" data-island="${st.islandId}" title="${st.name}" style="left:${st.x}%;top:${st.y}%"><span class="photo-ring"><img src="./images/${(PHOTOS[i.id]||PHOTOS.photo)[0]}" alt=""></span><span class="photo-tag">${label}</span></button>`
       }).join('')}
       <div class="map-credit">示意图 · 店铺位置仅为大致方位</div>
       <div class="map-ctrl">
@@ -1427,6 +1427,8 @@ app.addEventListener('click',e=>{
       S.activeStore=el.dataset.store;S.storeId=el.dataset.store;S.storesHidden=false;S.mapFullscreen=false;render()
       const card=document.querySelector('.store-card[data-store="'+S.activeStore+'"]'),track=document.getElementById('storeTrack')
       if(card&&track)track.scrollTo({left:card.offsetLeft-track.offsetLeft-24,behavior:'smooth'})
+      const section=document.getElementById('storesSection')
+      if(section)section.scrollIntoView({behavior:'smooth',block:'start'})
       break
     }
     case 'back':goBack();break
