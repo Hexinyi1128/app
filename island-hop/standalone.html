@@ -492,7 +492,7 @@ function carouselHtml(list){
       <div class="card-top"><span class="pill glasspill" style="color:var(--deep)">${i.hot}</span><span class="glass-strong" style="display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--deep)">${ICON.arrow}</span></div>
       <div class="card-bottom">
         <p class="card-en">${i.en}</p><h3 class="card-name">${i.name}</h3>
-        <div class="card-meta"><span>${i.duration} · ${i.distance}</span><span class="card-price">¥${i.price} 起</span></div>
+        <div class="card-meta"><span>${DATA.levels[0].duration} · ${i.distance}</span><span class="card-price">¥${levelPrice(i.id,'taste')} 起</span></div>
       </div>
     </button>`).join('')}
   </div>
@@ -503,8 +503,8 @@ function searchResultHtml(list){
   return list.map(i=>`<div class="card click" data-action="open-detail-id" data-id="${i.id}" style="display:flex;align-items:flex-start;gap:12px;padding:16px">
     ${ring(i.glyph,46)}
     <div style="flex:1;min-width:0">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><b style="font-size:14px">${i.name}</b><span style="font-size:12px;font-weight:700;color:var(--deep);flex:none">¥${i.price} 起</span></div>
-      <p style="margin:4px 0 0;font-size:10px;color:var(--muted)">${i.en} · ${i.distance} · ${i.duration} · ${i.rating} 分</p>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><b style="font-size:14px">${i.name}</b><span style="font-size:12px;font-weight:700;color:var(--deep);flex:none">¥${levelPrice(i.id,'taste')} 起</span></div>
+      <p style="margin:4px 0 0;font-size:10px;color:var(--muted)">${i.en} · ${i.distance} · ${DATA.levels[0].duration} · ${i.rating} 分</p>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${i.tags.map(t=>pill(t)).join('')}</div>
     </div>
     <span style="color:var(--muted)">${ICON.right}</span>
@@ -799,7 +799,7 @@ function viewHome(){
         </div>
       </div>
       <div style="margin-top:24px"><div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:16px">离你很近</h2><button data-action="nav-map" style="border:0;background:none;color:var(--muted);font-size:11px">打开地图 →</button></div>
-        <div style="margin-top:12px;display:grid;gap:10px">${DATA.islands.slice(2,4).map(i=>`<div class="card click" data-action="open-detail-id" data-id="${i.id}" style="display:flex;align-items:center;gap:12px;padding:14px">${ring(i.glyph,46)}<div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;font-weight:700">${i.name}</p><p style="margin:3px 0 0;font-size:11px;color:var(--muted)">${i.distance} · ${i.duration} · ${i.rating} 分</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`).join('')}</div>
+        <div style="margin-top:12px;display:grid;gap:10px">${DATA.islands.slice(2,4).map(i=>`<div class="card click" data-action="open-detail-id" data-id="${i.id}" style="display:flex;align-items:center;gap:12px;padding:14px">${ring(i.glyph,46)}<div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;font-weight:700">${i.name}</p><p style="margin:3px 0 0;font-size:11px;color:var(--muted)">${i.distance} · ${DATA.levels[0].duration} · ${i.rating} 分</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`).join('')}</div>
       </div>
       <div class="card" style="padding:20px;margin-top:24px">
         <p style="margin:0;font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--primary)">HOW IT WORKS</p><h2 style="margin:4px 0 0;font-size:16px">跳岛，不用一次想清楚</h2>
@@ -899,11 +899,11 @@ function viewDetail(){
           <p style="margin:8px 0 0;font-size:12px;line-height:1.8;color:var(--muted)">${i.summary}</p>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);margin-top:20px;padding:14px 0;border-radius:18px;background:var(--page);text-align:center">
             <div><span style="color:var(--primary)">${ICON.pin}</span><p style="margin:6px 0 0;font-size:11px;font-weight:700">${i.distance}</p><p style="margin:2px 0 0;font-size:9px;color:var(--muted)">距离</p></div>
-            <div style="border-left:1px solid var(--line)"><span style="color:var(--primary)">${ICON.clock}</span><p style="margin:6px 0 0;font-size:11px;font-weight:700">${i.duration}</p><p style="margin:2px 0 0;font-size:9px;color:var(--muted)">时长</p></div>
+            <div style="border-left:1px solid var(--line)"><span style="color:var(--primary)">${ICON.clock}</span><p style="margin:6px 0 0;font-size:11px;font-weight:700">${DATA.levels[0].duration}</p><p style="margin:2px 0 0;font-size:9px;color:var(--muted)">时长</p></div>
             <div style="border-left:1px solid var(--line)"><span style="color:var(--primary)">${ICON.spark}</span><p style="margin:6px 0 0;font-size:11px;font-weight:700">导师带练</p><p style="margin:2px 0 0;font-size:9px;color:var(--muted)">真实任务</p></div>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
-            <div><p style="margin:0;font-size:10px;color:var(--muted)">${i.explorers} 人已登岛 · 余 ${i.spots} 位</p><p style="margin:2px 0 0;font-size:19px;font-weight:800">¥${i.price}<span style="font-size:11px;font-weight:400;color:var(--muted)"> 起</span></p></div>
+            <div><p style="margin:0;font-size:10px;color:var(--muted)">${i.explorers} 人已登岛 · 余 ${i.spots} 位</p><p style="margin:2px 0 0;font-size:19px;font-weight:800">¥${levelPrice(i.id,'taste')}<span style="font-size:11px;font-weight:400;color:var(--muted)"> 起</span></p></div>
             <button class="btn deep compact" data-action="scroll-levels" style="width:auto"><span>选登岛方式</span><span class="arrow">${ICON.arrow}</span></button>
           </div>
         </div>
@@ -926,7 +926,7 @@ function viewDetail(){
         <p style="margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:10px;line-height:1.7;color:var(--muted)">${st.name} · ${st.distance} · 导师会带你做真实任务，做不出来也没关系。</p>
       </div>
       <div style="margin-top:28px"><h2 style="margin:0 0 12px;font-size:17px">推荐下一座岛</h2><div style="display:grid;gap:10px">
-        ${feed.slice(0,3).map(x=>`<div class="card click" data-action="open-detail-id" data-id="${x.id}" style="display:flex;align-items:center;gap:12px;padding:12px">${ring(x.glyph,44)}<div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;font-weight:700">${x.name}</p><p style="margin:3px 0 0;font-size:10px;color:var(--muted)">${x.distance} · ${x.duration} · ¥${x.price} 起</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`).join('')||'<p class="smallnote" style="padding:20px;text-align:center;background:#fff;border-radius:22px">这个筛选下暂时没有别的岛。</p>'}
+        ${feed.slice(0,3).map(x=>`<div class="card click" data-action="open-detail-id" data-id="${x.id}" style="display:flex;align-items:center;gap:12px;padding:12px">${ring(x.glyph,44)}<div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;font-weight:700">${x.name}</p><p style="margin:3px 0 0;font-size:10px;color:var(--muted)">${x.distance} · ${DATA.levels[0].duration} · ¥${levelPrice(x.id,'taste')} 起</p></div><span style="color:var(--muted)">${ICON.right}</span></div>`).join('')||'<p class="smallnote" style="padding:20px;text-align:center;background:#fff;border-radius:22px">这个筛选下暂时没有别的岛。</p>'}
       </div></div>
       <p style="text-align:center;font-size:10px;color:var(--muted);margin-top:24px">登岛不是承诺，只是一段真实的时间。</p>
     </div>
