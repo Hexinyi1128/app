@@ -156,15 +156,15 @@ button{color:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
 .ping::after{content:"";position:absolute;inset:0;border:3px solid #fff;border-radius:50%;background:var(--deep);box-shadow:0 2px 6px rgba(42,45,51,.2)}
 @keyframes ping{0%{transform:scale(.65);opacity:.55}80%,100%{transform:scale(1.8);opacity:0}}
 
-.island-collage{position:relative;height:600px;overflow:hidden;border-radius:18px;background:linear-gradient(165deg,#C7DCEF,#E6F0F8)}
-.island-collage::before{content:"";position:absolute;inset:0;background-image:radial-gradient(ellipse at 20% 30%,rgba(255,255,255,.55) 0 8%,transparent 9%),radial-gradient(ellipse at 70% 70%,rgba(255,255,255,.45) 0 10%,transparent 11%),radial-gradient(ellipse at 45% 90%,rgba(255,255,255,.4) 0 7%,transparent 8%)}
-.collage-piece{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));display:grid;place-items:center;gap:1px;width:70px;height:64px;padding:0 0 4px;border:0;color:var(--deep);font:inherit;clip-path:var(--shape);background:var(--piece);transition:filter .25s ease,opacity .25s ease,transform .25s ease}
-.collage-piece .g{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.75);font-size:10px;font-weight:800}
-.collage-piece .n{max-width:66px;font-size:8px;font-weight:700;line-height:1.15;text-align:center;text-shadow:0 1px 2px rgba(255,255,255,.9)}
-.collage-piece.on{filter:drop-shadow(0 8px 10px rgba(85,128,176,.25))}
-.collage-piece.on:hover{transform:translate(-50%,-54%) rotate(var(--rot,0deg)) scale(1.06)}
-.collage-piece.locked{opacity:.55;filter:grayscale(.45)}
-.collage-piece.locked .g{background:rgba(255,255,255,.5);color:var(--muted)}
+.island-world{position:relative;height:520px;overflow:hidden;border-radius:18px;background:linear-gradient(165deg,#C7DCEF,#E6F0F8)}
+.island-world::before{content:"";position:absolute;inset:0;background-image:radial-gradient(ellipse at 18% 24%,rgba(255,255,255,.5) 0 7%,transparent 8%),radial-gradient(ellipse at 72% 68%,rgba(255,255,255,.42) 0 9%,transparent 10%),radial-gradient(ellipse at 46% 88%,rgba(255,255,255,.38) 0 6%,transparent 7%)}
+.island-art{position:absolute;transform:translate(-50%,-50%);display:grid;place-items:center;gap:0;padding:0;border:0;background:none;color:var(--deep);font:inherit;width:170px;transition:transform .25s ease}
+.island-art:hover{transform:translate(-50%,-54%) scale(1.04)}
+.island-art svg{display:block;width:170px;height:118px;filter:drop-shadow(0 8px 10px rgba(85,128,176,.2))}
+.island-art .nm{margin-top:-6px;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.9);font-size:10px;font-weight:700;box-shadow:0 4px 10px rgba(85,128,176,.16)}
+.island-empty{position:absolute;inset:0;display:grid;place-content:center;gap:8px;text-align:center;padding:0 30px;color:var(--deep)}
+.island-empty b{font-size:15px}
+.island-empty span{font-size:11px;line-height:1.7;color:var(--muted)}
 .island-map{position:relative;height:300px;overflow:hidden;border-radius:18px;background:linear-gradient(160deg,#BFD6EA,#DCEAF5)}
 .island-map>svg{position:absolute;inset:0;width:100%;height:100%}
 .island-pin{position:absolute;transform:translate(-50%,-50%);display:grid;place-items:center;gap:2px;padding:0;border:0;background:none;color:var(--deep)}
@@ -654,11 +654,39 @@ const PHOTOS={
   baker:['baker.jpg','center 62%'],design:['design.jpg','center 38%'],light:['light.jpg','center 50%'],
   video:['makeup.jpg','center 45%'],retouch:['petgroom.jpg','center 38%']
 }
+function islandArtSvg(idx,glyph){
+  const themes=[
+    {land:'#C8DFC2',edge:'#EADFC0',tree:'#7FA98C',roof:'#C79F7A',house:'#F2E7D2'},
+    {land:'#E4EFF5',edge:'#F4F8FA',tree:'#9BB9C7',roof:'#B6CBD8',house:'#FFFFFF'},
+    {land:'#EBDCB4',edge:'#F2E6C8',tree:'#C2AB74',roof:'#D3A96F',house:'#F6EBCF'},
+    {land:'#CFE3C8',edge:'#EADFC0',tree:'#78A785',roof:'#C99A6C',house:'#F4E8CE'},
+    {land:'#DCCFE4',edge:'#EDE2EF',tree:'#A98CB4',roof:'#B482A8',house:'#F4EAF4'},
+    {land:'#D7DDE2',edge:'#ECEFF1',tree:'#94A6B0',roof:'#AEBCC6',house:'#F4F6F7'}
+  ]
+  const t=themes[idx%themes.length]
+  const deco=[
+    `<g><circle cx="46" cy="56" r="9" fill="${t.tree}"/><circle cx="58" cy="62" r="7" fill="${t.tree}"/><rect x="45" y="62" width="3" height="9" fill="#A8835F"/><rect x="57" y="67" width="3" height="6" fill="#A8835F"/><rect x="104" y="58" width="22" height="16" rx="2" fill="${t.house}"/><path d="M101 58 115 46 129 58Z" fill="${t.roof}"/><rect x="111" y="64" width="7" height="10" rx="1" fill="${t.roof}"/></g>`,
+    `<g><path d="M46 66 54 42 62 66Z" fill="${t.tree}"/><path d="M50 56 54 38 58 56Z" fill="${t.tree}"/><circle cx="104" cy="58" r="7" fill="#fff"/><circle cx="104" cy="49" r="5" fill="#fff"/><circle cx="102" cy="57" r="1" fill="#6F8390"/><circle cx="106" cy="57" r="1" fill="#6F8390"/><path d="M98 66h12" stroke="#9BB9C7" stroke-width="3" stroke-linecap="round"/></g>`,
+    `<g><rect x="50" y="48" width="7" height="22" rx="3" fill="${t.tree}"/><rect x="43" y="55" width="7" height="6" rx="3" fill="${t.tree}"/><rect x="57" y="52" width="7" height="6" rx="3" fill="${t.tree}"/><path d="M96 68 104 48 112 68Z" fill="${t.house}"/><path d="M93 68h22" stroke="#C2AB74" stroke-width="3" stroke-linecap="round"/></g>`,
+    `<g><rect x="51" y="50" width="4" height="20" fill="#A8835F"/><path d="M53 52q-14-8-18-2 10 0 18 8M53 52q14-8 18-2-10 0-18 8" fill="${t.tree}"/><rect x="101" y="54" width="20" height="14" rx="2" fill="${t.house}"/><path d="M98 54 111 42 124 54Z" fill="${t.roof}"/></g>`,
+    `<g><rect x="49" y="52" width="5" height="14" fill="#F2E7D2"/><path d="M42 54q9-14 18 0Z" fill="#C48AA8"/><circle cx="51" cy="53" r="1.2" fill="#fff"/><circle cx="55" cy="53" r="1.2" fill="#fff"/><rect x="102" y="56" width="4" height="12" fill="#F2E7D2"/><path d="M96 58q9-13 17 0Z" fill="#A98CB4"/><circle cx="104" cy="57" r="1.2" fill="#fff"/></g>`,
+    `<g><rect x="42" y="48" width="14" height="22" fill="${t.house}"/><path d="M40 48 49 34 58 48Z" fill="${t.roof}"/><rect x="96" y="42" width="16" height="28" fill="${t.house}"/><path d="M94 42 104 28 114 42Z" fill="${t.roof}"/><rect x="102" y="54" width="5" height="16" fill="${t.roof}"/></g>`
+  ]
+  return `<svg viewBox="0 0 160 120" aria-hidden="true">
+    <ellipse cx="80" cy="92" rx="62" ry="18" fill="rgba(85,128,176,.12)"/>
+    <path d="M18 68 C22 44 48 30 80 30 C112 30 140 46 143 68 C145 86 118 99 80 99 C42 99 15 86 18 68Z" fill="${t.edge}" stroke="rgba(255,255,255,.9)" stroke-width="3"/>
+    <path d="M24 64 C28 46 50 35 80 35 C110 35 134 47 137 65 C139 80 112 90 80 90 C48 90 21 80 24 64Z" fill="${t.land}"/>
+    ${deco[idx%deco.length]}
+    <text x="80" y="80" text-anchor="middle" font-size="13" font-weight="800" fill="rgba(85,128,176,.32)">DAY ${idx+1}</text>
+  </svg>`
+}
 function collageHtml(visited){
-  return `<div class="island-collage">${ISLAND_PIECES.map((p,idx)=>{
-    const on=visited.includes(p.id)
-    const real=DATA.islands.some(i=>i.id===p.id)
-    return `<button class="collage-piece ${on?'on':'locked'}" data-action="${real?'unlock-island':'island-piece'}" data-id="${p.id}" data-name="${p.name}" style="left:${p.x}%;top:${p.y}%;--shape:${p.shape};--piece:${p.color};--rot:${((idx*13)%16)-8}deg"><span class="g">${on?p.glyph:'?'}</span><span class="n">${p.name}</span></button>`
+  const slots=[[22,26],[56,18],[80,42],[30,58],[62,72],[16,80],[84,82],[46,44],[70,90],[24,12],[88,14],[50,90]]
+  const list=visited.map(id=>DATA.islands.find(i=>i.id===id)).filter(Boolean)
+  if(!list.length)return `<div class="island-world"><div class="island-empty"><b>群岛还等着你点亮</b><span>每体验一个职业，就会有一块新的岛屿浮现。</span></div></div>`
+  return `<div class="island-world">${list.map((i,idx)=>{
+    const [x,y]=slots[idx%slots.length]
+    return `<button class="island-art" data-action="unlock-island" data-id="${i.id}" style="left:${x}%;top:${y}%">${islandArtSvg(idx,i.glyph)}<span class="nm">${i.name}</span></button>`
   }).join('')}</div>`
 }
 function islandMapSvg(pos,visited){
